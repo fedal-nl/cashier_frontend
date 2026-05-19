@@ -1,6 +1,7 @@
-FROM node:20
-
-LABEL org.opencontainers.image.source=https://github.com/fedal-nl/cashier_frontend
+# -------------------------
+# 1. Build stage
+# -------------------------
+FROM node:20 AS builder
 
 WORKDIR /app
 
@@ -8,7 +9,15 @@ COPY package.json package-lock.json ./
 RUN npm install
 
 COPY . .
+RUN npm run build
 
-EXPOSE 3000
+# -------------------------
+# 2. Production stage
+# -------------------------
+FROM nginx:alpine
 
-CMD ["npm", "run", "dev", "--", "--host"]
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
