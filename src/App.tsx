@@ -6,10 +6,10 @@ import './index.css'
 import POS from './pages/POS'
 
 function App() {
-  return <>
+  return <html lang="ar" dir="rtl">
   <h1 className="text-red-500">ماكولات اهلنا</h1>
     <POS />
-  </>
+  </html>
 }
 
 export default App;
