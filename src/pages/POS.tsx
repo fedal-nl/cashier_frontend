@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { fetchMenu } from "../services/api"
 import type { Category } from "../types/menu"
+import { formatCurrency } from "../utils/formatters"
+
 
 export default function POS() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -42,7 +44,7 @@ export default function POS() {
             className="h-24 bg-white rounded-xl shadow flex flex-col justify-center items-center"
           >
             <span className="text-lg font-bold">{item.name_ar}</span>
-            <span className="text-sm text-gray-500">{item.price} €</span>
+            <span className="text-sm text-gray-500">{formatCurrency(Number(item.price))}</span>
           </div>
         ))}
       </div>
