@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react"
 import { fetchMenu } from "../services/api"
-import type { Category } from "../types/menu"
-import { formatCurrency } from "../utils/formatters"
+import type { Category, MenuItem } from "../types/menu"
+import CategoryList from "../components/CategoryList"
+import MenuItemGrid from "../components/MenuItemGrid"
+import MenuItemModal from "../components/MenuItemModal"
 
 
 export default function POS() {
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
 
   useEffect(() => {
     fetchMenu()
@@ -18,41 +21,29 @@ export default function POS() {
   }, [])
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gray-100">
       {/* Categories */}
-      <div className="w-1/5 bg-gray-100 p-2 overflow-y-auto">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat)}
-            className={`w-full h-16 mb-2 rounded-xl text-lg font-semibold ${
-              selectedCategory?.id === cat.id
-                ? "bg-blue-500 text-white"
-                : "bg-white"
-            }`}
-          >
-            {cat.name_ar}
-          </button>
-        ))}
-      </div>
-
+      <CategoryList
+        categories={categories}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+      />
       {/* Menu Items */}
-      <div className="w-3/5 p-2 grid grid-cols-3 gap-3">
-        {selectedCategory?.items.map((item) => (
-          <div
-            key={item.id}
-            className="h-24 bg-white rounded-xl shadow flex flex-col justify-center items-center"
-          >
-            <span className="text-lg font-bold">{item.name_ar}</span>
-            <span className="text-sm text-gray-500">{formatCurrency(Number(item.price))}</span>
-          </div>
-        ))}
-      </div>
+      <MenuItemGrid selectedCategory={selectedCategory} onItemClick={setSelectedItem} />
 
       {/* Cart */}
-      <div className="w-1/5 bg-gray-50 p-2 border-l">
+      <div className="w-1/5 bg-blue-100 p-2 border-l">
         Cart
       </div>
+
+      {/* Item Modal */}
+      {selectedItem && (
+        <MenuItemModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
     </div>
   )
 }

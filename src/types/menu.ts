@@ -23,6 +23,7 @@ export type MenuItem = {
     id: number;
     name_ar: string;
     price: number;
+    description_ar?: string;
     ingredients: Ingredient[];
     category: Category;
 }

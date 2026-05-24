@@ -3,13 +3,16 @@
 // import viteLogo from './assets/vite.svg'
 // import heroImg from './assets/hero.png'
 import './index.css'
+import Title from './components/Title'
 import POS from './pages/POS'
 
 function App() {
-  return <html lang="ar" dir="rtl">
-  <h1 className="text-red-500">ماكولات اهلنا</h1>
-    <POS />
-  </html>
+  return (
+    <>
+      <Title />
+      <POS />
+    </>
+  )
 }
 
 export default App;
