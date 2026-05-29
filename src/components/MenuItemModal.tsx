@@ -4,9 +4,10 @@ import { formatCurrency } from "../utils/formatters"
 type Props = {
   item: MenuItem
   onClose: () => void
+  onAdd: (item: MenuItem) => void
 }
 
-export default function MenuItemModal({ item, onClose }: Props) {
+export default function MenuItemModal({ item, onClose, onAdd }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[400px] p-6 shadow-xl">
@@ -34,8 +35,11 @@ export default function MenuItemModal({ item, onClose }: Props) {
           >
             إلغاء
           </button>
-                    <button
-            onClick={onClose}
+          <button
+            onClick={() => {
+                onAdd(item)
+                onClose()
+            }}
             className="w-full h-14 bg-blue-500 text-white text-lg rounded-xl"
           >
             إضافة إلى الطلب
