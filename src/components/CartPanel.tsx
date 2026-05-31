@@ -1,58 +1,144 @@
+import {
+  Card,
+  Button,
+  ListGroup,
+} from "react-bootstrap"
 import type { CartItem } from "../types/cart"
 import { formatCurrency } from "../utils/formatters"
-import CartItemComponent from "./CartItem"
 
 type Props = {
   cartItems: CartItem[]
-  onRemove: (index: number) => void
   onAdd: (index: number) => void
+  onRemove: (index: number) => void
+  onCheckout: () => void
 }
 
-export default function CartPanel({ cartItems, onRemove, onAdd }: Props) {
-  const totalAmount = cartItems.reduce(
-    (sum, item) => sum + item.totalPrice,
+export default function CartPanel({
+  cartItems,
+  onAdd,
+  onRemove,
+  onCheckout,
+}: Props) {
+  const total = cartItems.reduce(
+    (sum, item) =>
+      sum + item.totalPrice,
     0
   )
 
   return (
-    <div className="w-1/5 h-full bg-gray-50 border-l flex flex-col">
+    <Card className="h-100 d-flex flex-column">
 
-      {/* Header */}
-      <div className="p-3 border-b">
-        <h2 className="text-lg font-bold text-right">
-          الطلب الحالي
-        </h2>
-      </div>
+      <Card.Header className="fw-bold text-center">
+        الطلب الحالي
+      </Card.Header>
 
-      {/* Items (scrollable ONLY here) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {cartItems.length === 0 && (
-          <div className="text-center text-gray-400 mt-10">
-            لا توجد عناصر
+      <Card.Body className="d-flex flex-column p-2">
+
+        <ListGroup className="flex-grow-1 overflow-auto">
+
+          {cartItems.map(
+            (item, index) => (
+              <ListGroup.Item
+                key={index}
+              >
+                <div className="fw-bold">
+                  {
+                    item.menuItem
+                      .name_ar
+                  }
+                </div>
+
+                {item.modifications?.map(
+                  (
+                    mod,
+                    modIndex
+                  ) => (
+                    <div
+                      key={
+                        modIndex
+                      }
+                      className="small text-muted"
+                    >
+                      {mod.type ===
+                      "added"
+                        ? "+"
+                        : "-"}{" "}
+                      {
+                        mod
+                          .ingredient
+                          .ingredient_name_ar
+                      }
+                    </div>
+                  )
+                )}
+
+                {item.note && (
+                  <div className="small fst-italic text-muted">
+                    {
+                      item.note
+                    }
+                  </div>
+                )}
+
+                <div className="d-flex justify-content-between align-items-center mt-2">
+
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() =>
+                      onRemove(
+                        index
+                      )
+                    }
+                  >
+                    -
+                  </Button>
+
+                  <span>
+                    {
+                      item.quantity
+                    }
+                  </span>
+
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={() =>
+                      onAdd(
+                        index
+                      )
+                    }
+                  >
+                    +
+                  </Button>
+
+                </div>
+              </ListGroup.Item>
+            )
+          )}
+
+        </ListGroup>
+
+        <div className="mt-3">
+
+          <div className="fw-bold fs-5 text-center mb-3">
+            المجموع:{" "}
+            {formatCurrency(
+              total
+            )}
           </div>
-        )}
 
-        {cartItems.map((item, index) => (
-          <CartItemComponent
-            key={index}
-            item={item}
-            index={index}
-            onRemove={onRemove}
-            onAdd={onAdd}
-          />
-        ))}
-      </div>
+          <Button
+            variant="primary"
+            className="w-100"
+            onClick={onCheckout}
+          >
+            إتمام الطلب
+          </Button>
 
-      {/* Footer (always visible) */}
-      <div className="p-3 border-t bg-white">
-        <div className="text-sm text-gray-500 text-right">
-          المجموع
         </div>
-        <div className="text-xl font-bold text-right text-green-600">
-          {formatCurrency(totalAmount)}
-        </div>
-      </div>
 
-    </div>
+      </Card.Body>
+    </Card>
   )
 }

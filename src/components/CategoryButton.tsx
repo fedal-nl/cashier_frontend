@@ -1,4 +1,5 @@
 import type { Category } from "../types/menu";
+import { Button } from "react-bootstrap";
 
 type Props = {
   category: Category;
@@ -13,15 +14,13 @@ export default function CategoryButton({
 }: Props) {
   return (
     console.log("Rendering CategoryButton for category:", category.name_ar, "isSelected:", isSelected),
-    <button
+<Button
+      variant={isSelected ? "primary" : "outline-secondary"}
+      size="lg"
+      className="w-100 mb-2 py-4 fs-5"
       onClick={() => onSelect(category)}
-      className={`w-full h-16 mb-2 rounded-xl text-lg font-semibold transition ${
-        isSelected
-          ? "bg-blue-500 text-white"
-          : "bg-white active:bg-gray-200"
-      }`}
-      >
+    >
       {category.name_ar}
-    </button>
+    </Button>
   );
 }

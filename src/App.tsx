@@ -1,19 +1,11 @@
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import heroImg from './assets/hero.png'
-import './index.css'
-import Title from './components/Title'
-import POS from './pages/POS'
+import { BrowserRouter, BrowserRouter as Router } from 'react-router-dom'
+import AppRouter from './routers/AppRouter'
 
-function App() {
+
+export default function App() {
   return (
-    <>
-      <Title />
-      <POS />
-    </>
+    <BrowserRouter>
+      <AppRouter />
+    </BrowserRouter>
   )
 }
-
-export default App;
-

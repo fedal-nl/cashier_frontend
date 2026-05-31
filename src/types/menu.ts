@@ -10,20 +10,27 @@ export type Category = {
 }
 
 export type Ingredient = {
-  id: number;
-  name_ar: string;
-  price: number;
-  is_default: boolean;
-  is_removable: boolean;
-  is_addable: boolean;
-  unit: Unit;
+  ingredient_id: number
+  ingredient_name_ar: string
+  price: string
+  unit_id: number
+  unit_name_ar: string
+  is_default: boolean
+  is_removable: boolean
+  is_addable: boolean
 };
 
 export type MenuItem = {
-    id: number;
-    name_ar: string;
-    price: number;
-    description_ar?: string;
-    ingredients: Ingredient[];
-    category: Category;
+  id: number
+  name_ar: string
+  description_ar?: string
+  price: string
+  category_id: number
+  category_name_ar: string
+  quantity: number
+  unit_id: number
+  unit_name_ar: string
+  image?: string
+  is_active: boolean
+  ingredients: Ingredient[]
 }

@@ -1,8 +1,14 @@
-import type {MenuItem} from "./menu";
+import type {MenuItem, Ingredient} from "./menu";
+
+export type CartModification = {
+  ingredient: Ingredient
+  type: "added" | "removed"
+}
 
 export type CartItem = {
-    menuItem: MenuItem;
-    quantity: number;
-    totalPrice: number;
-    selectedIngredients: number[] | null; // Array of ingredient IDs
+  menuItem: MenuItem
+  quantity: number
+  totalPrice: number
+  note?: string
+  modifications?: CartModification[]
 }
