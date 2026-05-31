@@ -3,16 +3,18 @@ import {
   Modal,
   Button,
   Form,
+  Alert,
 } from "react-bootstrap"
+import { findCustomer } from "../services/customers"
 
 type Props = {
   show: boolean
   onClose: () => void
-  onSubmit: (
-    name: string,
-    phone: string,
-    address: string
-  ) => void
+  onSubmit: (customer: {
+    name: string
+    phone_number?: string
+    address?: string
+  }) => void
 }
 
 export default function CheckoutModal({
@@ -29,8 +31,45 @@ export default function CheckoutModal({
   const [address, setAddress] =
     useState("")
 
+  const [existingCustomer,
+    setExistingCustomer] =
+    useState(false)
+
+  async function handlePhoneBlur() {
+    if (!phone) return
+
+    try {
+      const result =
+        await findCustomer(phone)
+
+      if (result.exists) {
+        setExistingCustomer(true)
+        setName(
+          result.customer.name
+        )
+        setAddress(
+          result.customer.address || ""
+        )
+      } else {
+        setExistingCustomer(false)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  function handleSubmit() {
+    onSubmit({
+      name,
+      phone_number: phone,
+      address,
+    })
+
+    onClose()
+  }
+
   return (
-    <Modal show={show} onHide={onClose} centered>
+    <Modal show={show} onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>
           بيانات الزبون
@@ -38,47 +77,62 @@ export default function CheckoutModal({
       </Modal.Header>
 
       <Modal.Body>
-        <Form.Group className="mb-3">
-          <Form.Label>
-            الاسم
-          </Form.Label>
-          <Form.Control
-            value={name}
-            onChange={(e) =>
-              setName(
-                e.target.value
-              )
-            }
-          />
-        </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>
-            الهاتف
-          </Form.Label>
-          <Form.Control
-            value={phone}
-            onChange={(e) =>
-              setPhone(
-                e.target.value
-              )
-            }
-          />
-        </Form.Group>
+        {existingCustomer && (
+          <Alert variant="success">
+            تم العثور على الزبون
+          </Alert>
+        )}
 
-        <Form.Group>
-          <Form.Label>
-            العنوان
-          </Form.Label>
-          <Form.Control
-            value={address}
-            onChange={(e) =>
-              setAddress(
-                e.target.value
-              )
-            }
-          />
-        </Form.Group>
+        <Form>
+          <Form.Group className="mb-3">
+            <Form.Label>
+              رقم الهاتف
+            </Form.Label>
+
+            <Form.Control
+              value={phone}
+              onChange={(e) =>
+                setPhone(
+                  e.target.value
+                )
+              }
+              onBlur={
+                handlePhoneBlur
+              }
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>
+              الاسم
+            </Form.Label>
+
+            <Form.Control
+              value={name}
+              onChange={(e) =>
+                setName(
+                  e.target.value
+                )
+              }
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>
+              العنوان
+            </Form.Label>
+
+            <Form.Control
+              value={address}
+              onChange={(e) =>
+                setAddress(
+                  e.target.value
+                )
+              }
+            />
+          </Form.Group>
+        </Form>
       </Modal.Body>
 
       <Modal.Footer>
@@ -91,15 +145,9 @@ export default function CheckoutModal({
 
         <Button
           variant="success"
-          onClick={() =>
-            onSubmit(
-              name,
-              phone,
-              address
-            )
-          }
+          onClick={handleSubmit}
         >
-          تأكيد الطلب
+          إنشاء الطلب
         </Button>
       </Modal.Footer>
     </Modal>
