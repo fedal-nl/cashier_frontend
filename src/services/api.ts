@@ -1,27 +1,27 @@
-const API_BASE = "/api";
+import axios from "axios"
 
-export async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    ...options,
-  });
+const api = axios.create({
+  baseURL: "/api",
+  withCredentials: true,
+  xsrfCookieName: "csrftoken",
+  xsrfHeaderName: "X-CSRFToken",
+})
 
-  if (!res.ok) {
-    throw new Error("API error");
-  }
-
-  return res.json();
-}
+export default api
 
 export async function fetchMenu() {
-  const response = await apiFetch("/menu/menus/");
-  
-  // if the response is empty or doesn't have the expected structure, throw an error
-  if (!response || !Array.isArray(response)) {
-    throw new Error("Invalid menu data");
+  const response = await api.get(
+    "/menu/menus/"
+  )
+
+  if (
+    !response.data ||
+    !Array.isArray(response.data)
+  ) {
+    throw new Error(
+      "Invalid menu data"
+    )
   }
 
-  return response;
+  return response.data
 }

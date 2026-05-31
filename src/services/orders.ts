@@ -1,54 +1,70 @@
-import axios from "axios"
-import type { CartItem } from "../types/cart"
+import api from "./api"
 
-const API_URL = "/api"
-
-type CustomerPayload = {
-  name: string
-  phone_number?: string
-  address?: string
-  email?: string
+type OrderModificationPayload = {
+  ingredient_id: number
+  type: "added" | "removed"
+  quantity: number
+  name_ar: string
 }
 
-export async function createCustomer(
-  customer: CustomerPayload
+type OrderItemPayload = {
+  menu_item_id: number
+  quantity: number
+  note?: string
+  modifications: OrderModificationPayload[]
+}
+
+type CreateOrderPayload = {
+  customer_id: number
+  items: OrderItemPayload[]
+  note?: string
+  status: string
+}
+
+export async function createOrder(
+  payload: CreateOrderPayload
 ) {
-  const response = await axios.post(
-    `${API_URL}/orders/customers/`,
-    customer
+  const response = await api.post(
+    "/orders/",
+    payload
   )
-//   if (response.status !== 201) {
-//     throw new Error("Failed to create customer")
-//   }
-  console.log("Customer creation response:", response)
-  console.log("Customer created:", response.data)
 
   return response.data
 }
 
-export async function createOrder(
-  customerId: number,
-  cartItems: CartItem[]
+export async function fetchOrders(
+  search?: string,
+  customer?: string,
+  status?: string
 ) {
-  const payload = {
-    customer_id: customerId,
-    status: "created",
-    items: cartItems.map((item) => ({
-      menu_item_id: item.menuItem.id,
-      quantity: item.quantity,
-      order_item_note: item.note || "",
-      modifications:
-        item.modifications?.map((mod) => ({
-          ingredient_id:
-            mod.ingredient.ingredient_id,
-          type: mod.type,
-        })) || [],
-    })),
+  const params = new URLSearchParams()
+
+  if (search) {
+    params.append("search", search)
   }
 
-  const response = await axios.post(
-    `${API_URL}/orders/`,
-    payload
+  if (customer) {
+    params.append("customer", customer)
+  }
+
+  if (status) {
+    params.append("status", status)
+  }
+
+  const response = await api.get(
+    `/orders/list/?${params.toString()}`
+  )
+
+  return response.data
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+) {
+  const response = await api.patch(
+    `/orders/${orderId}/status/`,
+    { status }
   )
 
   return response.data

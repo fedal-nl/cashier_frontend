@@ -5,7 +5,8 @@ import type { Category, MenuItem } from "../types/menu"
 import type { CartItem, CartModification } from "../types/cart"
 
 import { fetchMenu } from "../services/api"
-import { createOrder, createCustomer } from "../services/orders"
+import { createOrder } from "../services/orders"
+import { createCustomer, findCustomer } from "../services/customers"
 
 import CategoryList from "../components/CategoryList"
 import MenuGrid from "../components/MenuGrid"
@@ -111,32 +112,61 @@ export default function Cashier() {
   }
 
   async function handleCheckout(
-      name: string,
-      phone: string,
-      address: string
+    customerData: any
   ) {
-      try {
-        const customer =
-          await createCustomer({
-            name,
-            phone_number: phone,
-            address,
-          })
+    try {
+      let customerId
 
-        await createOrder(
-          customer.customer_id,
-          cartItems
+      const existing =
+        await findCustomer(
+          customerData.phone_number
         )
 
-        setCartItems([])
-        setShowCheckout(false)
+      if (existing.exists) {
+        customerId =
+          existing.customer.id
+      } else {
+        const customer =
+          await createCustomer(
+            customerData
+          )
 
-        alert("تم إنشاء الطلب بنجاح")
-      } catch (error) {
-        console.error(error)
-        alert("حدث خطأ")
+        customerId =
+          customer.customer_id
       }
+
+    await createOrder({
+      customer_id: customerId,
+      note: "",
+      status: "created",
+      items: cartItems.map((item) => ({
+        menu_item_id: item.menuItem.id,
+        quantity: item.quantity,
+        note: item.note || "",
+        modifications:
+          item.modifications?.map(
+            (mod) => ({
+              ingredient_id:
+                mod.ingredient.ingredient_id,
+
+              type: mod.type,
+
+              quantity: 1,
+
+              name_ar:
+                mod.ingredient.ingredient_name_ar,
+            })
+          ) || [],
+      })),
+    })
+      setCartItems([])
+
+      alert("تم إنشاء الطلب بنجاح")
+    } catch (error) {
+      console.error(error)
+      alert("حدث خطأ")
     }
+  }
 
 return (
     <Container fluid className="vh-100 p-3">
