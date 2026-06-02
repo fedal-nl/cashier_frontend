@@ -1,8 +1,8 @@
 import {
   Table,
-  Button,
-  Badge,
+  Form,
 } from "react-bootstrap"
+
 import { formatCurrency } from "../utils/formatters"
 
 type Order = {
@@ -13,6 +13,7 @@ type Order = {
   total_price: number
   status: string
   created_at: string
+  updated_at: string
 }
 
 type Props = {
@@ -23,99 +24,116 @@ type Props = {
   ) => void
 }
 
+const ORDER_STATUSES = {
+  created: "تم الإنشاء",
+  preparing: "قيد التحضير",
+  ready: "جاهز للاستلام",
+  completed: "مكتمل",
+  cancelled: "ملغي",
+  paid: "مدفوع",
+  picked_up: "تم الاستلام",
+  delivered: "تم التوصيل",
+}
+
 export default function OrdersTable({
   orders,
   onStatusChange,
 }: Props) {
-  function nextStatus(
-    status: string
-  ) {
-    if (status === "created")
-      return "preparing"
-
-    if (status === "preparing")
-      return "ready"
-
-    if (status === "ready")
-      return "delivered"
-
-    return null
-  }
-
+    console.log("Rendering OrdersTable with orders:", orders)
   return (
-    <Table striped bordered hover>
+    <Table
+      striped
+      bordered
+      hover
+      responsive
+    >
       <thead>
         <tr>
           <th>#</th>
           <th>الزبون</th>
-          <th>الوقت</th>
+          <th>وقت الإنشاء</th>
+          <th>وقت التحديث</th>
           <th>المبلغ</th>
           <th>الحالة</th>
-          <th>إجراء</th>
         </tr>
       </thead>
 
       <tbody>
-        {orders.map((order) => {
-          const next =
-            nextStatus(
-              order.status
-            )
+        {orders.map((order) => (
+            
+          <tr key={order.id}>
+            <td>
+              {order.id.slice(
+                0,
+                8
+              )}
+            </td>
 
-          return (
-            <tr key={order.id}>
-              <td>
-                {order.id.slice(
-                  0,
-                  8
-                )}
-              </td>
+            <td>
+              {
+                order.customer
+                  .name
+              }
+            </td>
 
-              <td>
-                {
-                  order.customer
-                    .name
+            <td>
+              {new Date(
+                order.created_at
+              ).toLocaleString(
+                "ar-IQ"
+              )}
+            </td>
+
+            <td>
+              {new Date(
+                order.updated_at
+              ).toLocaleString(
+                "ar-IQ"
+              )}
+            </td>
+
+            <td>
+              {formatCurrency(
+                order.total_price
+              )}
+            </td>
+
+            <td
+              style={{
+                minWidth: "180px",
+              }}
+            >
+              <Form.Select
+                size="sm"
+                value={
+                  order.status
                 }
-              </td>
-
-              <td>
-                {new Date(
-                  order.created_at
-                ).toLocaleTimeString(
-                  "ar-IQ"
+                onChange={(e) =>
+                  onStatusChange(
+                    order.id,
+                    e.target.value
+                  )
+                }
+              >
+                {Object.entries(
+                  ORDER_STATUSES
+                ).map(
+                  ([
+                    value,
+                    label,
+                  ]) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {label}
+                    </option>
+                  )
                 )}
-              </td>
-
-              <td>
-                {formatCurrency(
-                  order.total_price
-                )}
-              </td>
-
-              <td>
-                <Badge bg="info">
-                  {order.status}
-                </Badge>
-              </td>
-
-              <td>
-                {next && (
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      onStatusChange(
-                        order.id,
-                        next
-                      )
-                    }
-                  >
-                    تحديث
-                  </Button>
-                )}
-              </td>
-            </tr>
-          )
-        })}
+              </Form.Select>
+            </td>
+          </tr>
+        ))}
       </tbody>
     </Table>
   )
