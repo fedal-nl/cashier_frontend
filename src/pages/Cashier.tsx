@@ -169,8 +169,8 @@ export default function Cashier() {
   }
 
 return (
-    <Container fluid className="vh-100 p-3">
-      <Row className="h-100">
+    <Container fluid className="p-3" style={{ height: "calc(100vh - 56px)", overflow: "auto" }}>
+      <Row className="h-100" style={{ overflow: "hidden" }}>
 
         <Col md={2}>
           <CategoryList
