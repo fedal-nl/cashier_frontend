@@ -1,20 +1,31 @@
-import { useState } from "react"
+import {
+  useState,
+} from "react"
 import {
   Modal,
   Button,
   Form,
   Alert,
+  Card,
+  InputGroup,
+  Spinner,
 } from "react-bootstrap"
-import { findCustomer } from "../services/customers"
+import {
+  findCustomer,
+  type Customer,
+  type CustomerPayload,
+} from "../services/customers"
+
+export type CheckoutCustomer =
+  | { customer_id: number }
+  | CustomerPayload
 
 type Props = {
   show: boolean
   onClose: () => void
-  onSubmit: (customer: {
-    name: string
-    phone_number?: string
-    address?: string
-  }) => void
+  onSubmit: (
+    customer: CheckoutCustomer
+  ) => void
 }
 
 export default function CheckoutModal({
@@ -31,45 +42,122 @@ export default function CheckoutModal({
   const [address, setAddress] =
     useState("")
 
-  const [existingCustomer,
-    setExistingCustomer] =
+  const [
+    selectedCustomer,
+    setSelectedCustomer,
+  ] = useState<Customer | null>(null)
+
+  const [searched, setSearched] =
     useState(false)
 
-  async function handlePhoneBlur() {
-    if (!phone) return
+  const [searching, setSearching] =
+    useState(false)
+
+  const [error, setError] =
+    useState<string | null>(null)
+
+  function resetForm() {
+    setName("")
+    setPhone("")
+    setAddress("")
+    setSelectedCustomer(null)
+    setSearched(false)
+    setSearching(false)
+    setError(null)
+  }
+
+  async function handleCustomerSearch() {
+    if (!phone.trim()) {
+      setError("أدخل رقم الهاتف أولا")
+      return
+    }
+
+    setSearching(true)
+    setSearched(false)
+    setError(null)
 
     try {
       const result =
-        await findCustomer(phone)
+        await findCustomer(
+          phone.trim()
+        )
 
       if (result.exists) {
-        setExistingCustomer(true)
+        const customer =
+          result.customer as Customer
+
+        setSelectedCustomer(customer)
         setName(
-          result.customer.name
+          customer.name
         )
         setAddress(
-          result.customer.address || ""
+          customer.address || ""
         )
       } else {
-        setExistingCustomer(false)
+        setSelectedCustomer(null)
       }
+
+      setSearched(true)
     } catch (error) {
       console.error(error)
+      setError("تعذر البحث عن العميل")
+    } finally {
+      setSearching(false)
     }
   }
 
-  function handleSubmit() {
-    onSubmit({
-      name,
-      phone_number: phone,
-      address,
-    })
+  function handlePhoneChange(
+    value: string
+  ) {
+    setPhone(value)
+    setSelectedCustomer(null)
+    setSearched(false)
+    setError(null)
+  }
 
+  function handleClose() {
+    resetForm()
     onClose()
   }
 
+  function handleSubmit(
+    event: React.FormEvent
+  ) {
+    event.preventDefault()
+
+    if (selectedCustomer) {
+      onSubmit({
+        customer_id:
+          selectedCustomer.id,
+      })
+      handleClose()
+      return
+    }
+
+    if (!name.trim()) {
+      setError("اسم العميل مطلوب")
+      return
+    }
+
+    onSubmit({
+      name: name.trim(),
+      phone_number:
+        phone.trim() || undefined,
+      address:
+        address.trim() || undefined,
+    })
+
+    handleClose()
+  }
+
   return (
-    <Modal show={show} onHide={onClose}>
+    <Modal
+      show={show}
+      onHide={handleClose}
+      dir="rtl"
+      centered
+    >
+      <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
         <Modal.Title>
           بيانات الزبون
@@ -77,31 +165,76 @@ export default function CheckoutModal({
       </Modal.Header>
 
       <Modal.Body>
-
-        {existingCustomer && (
-          <Alert variant="success">
-            تم العثور على الزبون
+        {error && (
+          <Alert variant="danger">
+            {error}
           </Alert>
         )}
 
-        <Form>
+        {selectedCustomer && (
+          <Alert variant="success">
+            تم اختيار عميل موجود لهذا الطلب
+          </Alert>
+        )}
+
           <Form.Group className="mb-3">
             <Form.Label>
               رقم الهاتف
             </Form.Label>
 
-            <Form.Control
-              value={phone}
-              onChange={(e) =>
-                setPhone(
-                  e.target.value
-                )
-              }
-              onBlur={
-                handlePhoneBlur
-              }
-            />
+            <InputGroup>
+              <Form.Control
+                value={phone}
+                onChange={(e) =>
+                  handlePhoneChange(
+                    e.target.value
+                  )
+                }
+              />
+              <Button
+                type="button"
+                variant="outline-primary"
+                onClick={
+                  handleCustomerSearch
+                }
+                disabled={searching}
+              >
+                {searching ? (
+                  <Spinner
+                    animation="border"
+                    size="sm"
+                  />
+                ) : (
+                  "بحث"
+                )}
+              </Button>
+            </InputGroup>
           </Form.Group>
+
+          {selectedCustomer && (
+            <Card className="mb-3 text-end">
+              <Card.Body>
+                <Card.Title className="mb-2">
+                  {selectedCustomer.name}
+                </Card.Title>
+                <div className="text-muted small">
+                  {selectedCustomer.phone_number ||
+                    "بدون رقم هاتف"}
+                </div>
+                <div className="text-muted small">
+                  {selectedCustomer.address ||
+                    "بدون عنوان"}
+                </div>
+              </Card.Body>
+            </Card>
+          )}
+
+          {searched &&
+            !selectedCustomer && (
+              <Alert variant="info">
+                لم يتم العثور على عميل بهذا الرقم، يمكنك إنشاء عميل جديد من نفس النموذج
+              </Alert>
+            )}
 
           <Form.Group className="mb-3">
             <Form.Label>
@@ -115,6 +248,9 @@ export default function CheckoutModal({
                   e.target.value
                 )
               }
+              disabled={Boolean(
+                selectedCustomer
+              )}
             />
           </Form.Group>
 
@@ -130,26 +266,32 @@ export default function CheckoutModal({
                   e.target.value
                 )
               }
+              disabled={Boolean(
+                selectedCustomer
+              )}
             />
           </Form.Group>
-        </Form>
       </Modal.Body>
 
       <Modal.Footer>
         <Button
+          type="button"
           variant="secondary"
-          onClick={onClose}
+          onClick={handleClose}
         >
           إلغاء
         </Button>
 
         <Button
           variant="success"
-          onClick={handleSubmit}
+          type="submit"
         >
-          إنشاء الطلب
+          {selectedCustomer
+            ? "اختيار وإنشاء الطلب"
+            : "إنشاء العميل والطلب"}
         </Button>
       </Modal.Footer>
+      </Form>
     </Modal>
   )
 }
