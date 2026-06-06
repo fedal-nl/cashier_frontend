@@ -10,7 +10,7 @@ import {
   logout as logoutRequest,
   getCurrentUser,
 } from "../services/auth"
-import api from "../services/api"
+import { refreshCsrfToken } from "../services/api"
 
 
 type AuthContextType = {
@@ -43,18 +43,17 @@ export function AuthProvider({
     setUsername,
   ] = useState<string | null>(null)
 
-    useEffect(() => {
-    api.get("/auth/csrf/")
-
-    getCurrentUser()
+  useEffect(() => {
+    refreshCsrfToken()
+      .then(() => getCurrentUser())
         .then((data) => {
-        if (data.authenticated) {
+          if (data.authenticated) {
             setIsAuthenticated(true)
             setUsername(data.username)
-        }
+          }
         })
         .catch(() => {})
-    }, [])
+  }, [])
 
   async function login(
     username: string,

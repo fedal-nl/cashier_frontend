@@ -1,9 +1,6 @@
-import api from "./api"
+import api, { refreshCsrfToken } from "./api"
 
-export async function login(
-  username: string,
-  password: string
-) {
+export async function login( username: string, password: string) {
   const response = await api.post(
     "/auth/login/",
     {
@@ -12,6 +9,8 @@ export async function login(
     }
   )
   console.log("Login response:", response)
+
+  await refreshCsrfToken()
 
   return response.data
 }
