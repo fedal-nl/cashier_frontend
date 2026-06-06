@@ -121,7 +121,7 @@ export default function MenuItemModal({
       centered
       size="lg"
     >
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>
           {item.name_ar}
         </Modal.Title>
@@ -142,7 +142,10 @@ export default function MenuItemModal({
           )}
         </div>
 
-        <Form.Group className="mb-4">
+        <Form.Group
+          className="mb-4"
+          style={{ width: "96px" }}
+        >
           <Form.Label>
             الكمية
           </Form.Label>
@@ -150,6 +153,10 @@ export default function MenuItemModal({
           <Form.Control
             type="number"
             min={1}
+            style={{
+              textAlign: "center",
+              width: "96px",
+            }}
             value={quantity}
             onChange={(e) =>
               setQuantity(

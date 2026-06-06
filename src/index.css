@@ -110,3 +110,82 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.customers-page {
+  min-height: calc(100vh - 56px);
+  text-align: right;
+}
+
+.customers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.customers-header h2 {
+  margin-bottom: 6px;
+}
+
+.customers-header p {
+  color: #6c757d;
+  font-size: 15px;
+}
+
+.customers-count {
+  color: #6c757d;
+  font-size: 15px;
+  text-align: left;
+}
+
+.customers-table-wrap {
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.customers-table {
+  text-align: right;
+}
+
+.customers-table thead th {
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.customers-table td {
+  color: #343a40;
+}
+
+.customer-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.customers-empty {
+  display: flex;
+  min-height: 240px;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
+
+@media (max-width: 768px) {
+  .customers-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .customers-header .btn {
+    width: 100%;
+  }
+
+  .customers-count {
+    text-align: right;
+  }
+}

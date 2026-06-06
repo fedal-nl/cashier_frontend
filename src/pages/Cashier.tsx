@@ -6,13 +6,15 @@ import type { CartItem, CartModification } from "../types/cart"
 
 import { fetchMenu } from "../services/api"
 import { createOrder } from "../services/orders"
-import { createCustomer, findCustomer } from "../services/customers"
+import { createCustomer } from "../services/customers"
 
 import CategoryList from "../components/CategoryList"
 import MenuGrid from "../components/MenuGrid"
 import CartPanel from "../components/CartPanel"
 import MenuItemModal from "../components/MenuItemModal"
-import CheckoutModal from "../components/CheckoutModal"
+import CheckoutModal, {
+  type CheckoutCustomer,
+} from "../components/CheckoutModal"
 
 
 
@@ -112,19 +114,14 @@ export default function Cashier() {
   }
 
   async function handleCheckout(
-    customerData: any
+    customerData: CheckoutCustomer
   ) {
     try {
       let customerId
 
-      const existing =
-        await findCustomer(
-          customerData.phone_number
-        )
-
-      if (existing.exists) {
+      if ("customer_id" in customerData) {
         customerId =
-          existing.customer.id
+          customerData.customer_id
       } else {
         const customer =
           await createCustomer(
