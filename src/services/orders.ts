@@ -21,6 +21,19 @@ type CreateOrderPayload = {
   status: string
 }
 
+export type DeliveryCompany = {
+  id: number
+  name?: string
+  phone_number?: string
+  website?: string
+  contact_person?: string
+}
+
+type UpdateOrderStatusPayload = {
+  status: string
+  delivery_company_id?: number
+}
+
 export async function createOrder(
   payload: CreateOrderPayload
 ) {
@@ -58,13 +71,21 @@ export async function fetchOrders(
   return response.data
 }
 
+export async function fetchDeliveryCompanies() {
+  const response = await api.get<DeliveryCompany[]>(
+    "/orders/delivery-companies/"
+  )
+
+  return response.data
+}
+
 export async function updateOrderStatus(
   orderId: string,
-  status: string
+  payload: UpdateOrderStatusPayload
 ) {
   const response = await api.patch(
     `/orders/${orderId}/status/`,
-    { status }
+    payload
   )
 
   return response.data

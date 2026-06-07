@@ -158,7 +158,7 @@ export default function CheckoutModal({
       centered
     >
       <Form onSubmit={handleSubmit}>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>
           بيانات الزبون
         </Modal.Title>
