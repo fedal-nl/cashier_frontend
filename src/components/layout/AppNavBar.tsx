@@ -42,6 +42,10 @@ export default function AppNavbar() {
                   العملاء
                 </Nav.Link>
 
+                <Nav.Link as={Link} to="/reports">
+                  التقارير
+                </Nav.Link>
+
                 <LogoutButton />
               </>
             )}

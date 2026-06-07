@@ -1,4 +1,5 @@
 import axios from "axios"
+import type { Category } from "../types/menu"
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -42,9 +43,34 @@ api.interceptors.request.use(async (config) => {
 
 export default api
 
-export async function fetchMenu() {
+export type Branch = {
+  id: number
+  name: string
+  location?: string
+  is_active: boolean
+}
+
+export async function fetchBranches() {
+  const response = await api.get<Branch[]>(
+    "/menu/branches/"
+  )
+
+  return response.data
+}
+
+export async function fetchMenu(
+  branchId?: string
+) {
+  const params = new URLSearchParams()
+
+  if (branchId) {
+    params.append("branch_id", branchId)
+  }
+
+  const query = params.toString()
+
   const response = await api.get(
-    "/menu/menus/"
+    `/menu/menus/${query ? `?${query}` : ""}`
   )
 
   if (
@@ -56,5 +82,5 @@ export async function fetchMenu() {
     )
   }
 
-  return response.data
+  return response.data as Category[]
 }

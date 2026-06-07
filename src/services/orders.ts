@@ -16,6 +16,7 @@ type OrderItemPayload = {
 
 type CreateOrderPayload = {
   customer_id: number
+  branch_id?: number
   items: OrderItemPayload[]
   note?: string
   status: string
