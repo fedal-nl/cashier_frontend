@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react"
-import { Container, Row, Col } from "react-bootstrap"
+import {
+  Alert,
+  Button,
+  Container,
+  Row,
+  Col,
+  Modal,
+} from "react-bootstrap"
+import { useNavigate } from "react-router-dom"
 
 import type { Category, MenuItem } from "../types/menu"
 import type { CartItem, CartModification } from "../types/cart"
@@ -19,6 +27,8 @@ import CheckoutModal, {
 
 
 export default function Cashier() {
+  const navigate = useNavigate()
+
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] =
     useState<Category | null>(null)
@@ -28,6 +38,14 @@ export default function Cashier() {
   const [showModal, setShowModal] = useState(false)
 
   const [showCheckout, setShowCheckout] = useState(false)
+
+  const [
+    showOrderSuccess,
+    setShowOrderSuccess,
+  ] = useState(false)
+
+  const [checkoutError, setCheckoutError] =
+    useState<string | null>(null)
 
   useEffect(() => {
     fetchMenu().then((data: Category[]) => {
@@ -117,6 +135,7 @@ export default function Cashier() {
     customerData: CheckoutCustomer
   ) {
     try {
+      setCheckoutError(null)
       let customerId
 
       if ("customer_id" in customerData) {
@@ -157,16 +176,34 @@ export default function Cashier() {
       })),
     })
       setCartItems([])
+      setShowCheckout(false)
+      setShowOrderSuccess(true)
 
-      alert("تم إنشاء الطلب بنجاح")
+      window.setTimeout(() => {
+        navigate("/orders")
+      }, 1200)
     } catch (error) {
       console.error(error)
-      alert("حدث خطأ")
+      setCheckoutError(
+        "تعذر إنشاء الطلب، حاول مرة أخرى"
+      )
     }
   }
 
 return (
     <Container fluid className="p-3" style={{ height: "calc(100vh - 56px)", overflow: "auto" }}>
+      {checkoutError && (
+        <Alert
+          variant="danger"
+          onClose={() =>
+            setCheckoutError(null)
+          }
+          dismissible
+        >
+          {checkoutError}
+        </Alert>
+      )}
+
       <Row className="h-100" style={{ overflow: "hidden" }}>
 
         <Col md={2}>
@@ -213,6 +250,38 @@ return (
         }
         onSubmit={handleCheckout}
       />
+
+      <Modal
+        show={showOrderSuccess}
+        centered
+        dir="rtl"
+      >
+        <Modal.Header>
+          <Modal.Title>
+            تم إنشاء الطلب
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body className="text-center">
+          <div className="fs-5 fw-semibold text-success mb-2">
+            تم إنشاء الطلب بنجاح
+          </div>
+          <div className="text-muted">
+            سيتم نقلك إلى صفحة الطلبات
+          </div>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="success"
+            onClick={() =>
+              navigate("/orders")
+            }
+          >
+            عرض الطلبات
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   )
 }

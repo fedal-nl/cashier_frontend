@@ -4,8 +4,9 @@ import {
 } from "react-bootstrap"
 
 import { formatCurrency } from "../utils/formatters"
+import { ORDER_STATUS_LABELS } from "../constants/orderstatus"
 
-type Order = {
+export type Order = {
   id: string
   customer: {
     name: string
@@ -24,22 +25,10 @@ type Props = {
   ) => void
 }
 
-const ORDER_STATUSES = {
-  created: "تم الإنشاء",
-  preparing: "قيد التحضير",
-  ready: "جاهز للاستلام",
-  completed: "مكتمل",
-  cancelled: "ملغي",
-  paid: "مدفوع",
-  picked_up: "تم الاستلام",
-  delivered: "تم التوصيل",
-}
-
 export default function OrdersTable({
   orders,
   onStatusChange,
 }: Props) {
-    console.log("Rendering OrdersTable with orders:", orders)
   return (
     <Table
       striped
@@ -116,7 +105,7 @@ export default function OrdersTable({
                 }
               >
                 {Object.entries(
-                  ORDER_STATUSES
+                  ORDER_STATUS_LABELS
                 ).map(
                   ([
                     value,
