@@ -17,7 +17,9 @@ import type { Order } from "../components/OrdersTable"
 import { ORDER_STATUS_LABELS } from "../constants/orderstatus"
 
 import {
+  fetchDeliveryCompanies,
   fetchOrders,
+  type DeliveryCompany,
   updateOrderStatus,
 } from "../services/orders"
 
@@ -33,6 +35,16 @@ export default function Orders() {
 
   const [search, setSearch] =
     useState("")
+
+  const [
+    deliveryCompanies,
+    setDeliveryCompanies,
+  ] = useState<DeliveryCompany[]>([])
+
+  const [
+    selectedDeliveryCompanyId,
+    setSelectedDeliveryCompanyId,
+  ] = useState("")
 
   const [
     pendingStatusChange,
@@ -63,6 +75,11 @@ export default function Orders() {
 
   useEffect(() => {
     loadOrders()
+    fetchDeliveryCompanies()
+      .then(setDeliveryCompanies)
+      .catch((err) => {
+        console.error(err)
+      })
   }, [])
 
   async function handleStatusChange(
@@ -87,6 +104,7 @@ export default function Orders() {
       currentStatus: order.status,
       nextStatus: status,
     })
+    setSelectedDeliveryCompanyId("")
   }
 
   function closeStatusDialog() {
@@ -95,10 +113,21 @@ export default function Orders() {
     }
 
     setPendingStatusChange(null)
+    setSelectedDeliveryCompanyId("")
   }
 
   async function confirmStatusChange() {
     if (!pendingStatusChange) {
+      return
+    }
+
+    if (
+      pendingStatusChange.nextStatus === "picked_up" &&
+      !selectedDeliveryCompanyId
+    ) {
+      setError(
+        "اختر شركة التوصيل قبل تأكيد الاستلام"
+      )
       return
     }
 
@@ -107,15 +136,27 @@ export default function Orders() {
     setError(null)
 
     try {
+      const payload = {
+        status:
+          pendingStatusChange.nextStatus,
+        ...(pendingStatusChange.nextStatus ===
+          "picked_up" && {
+          delivery_company_id: Number(
+            selectedDeliveryCompanyId
+          ),
+        }),
+      }
+
       await updateOrderStatus(
         pendingStatusChange.orderId,
-        pendingStatusChange.nextStatus
+        payload
       )
 
       setMessage(
         "تم تحديث حالة الطلب بنجاح"
       )
       setPendingStatusChange(null)
+      setSelectedDeliveryCompanyId("")
       await loadOrders()
     } catch (err) {
       console.error(err)
@@ -225,6 +266,51 @@ export default function Orders() {
                   )}
                 </span>
               </div>
+
+              {pendingStatusChange.nextStatus ===
+                "picked_up" && (
+                <Form.Group className="mt-4">
+                  <Form.Label>
+                    شركة التوصيل
+                  </Form.Label>
+
+                  <Form.Select
+                    value={
+                      selectedDeliveryCompanyId
+                    }
+                    onChange={(event) =>
+                      setSelectedDeliveryCompanyId(
+                        event.target.value
+                      )
+                    }
+                    disabled={updatingStatus}
+                    required
+                  >
+                    <option value="">
+                      اختر شركة التوصيل
+                    </option>
+
+                    {deliveryCompanies.map(
+                      (company) => (
+                        <option
+                          key={company.id}
+                          value={company.id}
+                        >
+                          {company.name ||
+                            `شركة رقم ${company.id}`}
+                        </option>
+                      )
+                    )}
+                  </Form.Select>
+
+                  {deliveryCompanies.length ===
+                    0 && (
+                    <div className="text-muted small mt-2">
+                      لا توجد شركات توصيل متاحة
+                    </div>
+                  )}
+                </Form.Group>
+              )}
             </>
           )}
         </Modal.Body>
@@ -243,7 +329,14 @@ export default function Orders() {
             type="button"
             variant="primary"
             onClick={confirmStatusChange}
-            disabled={updatingStatus}
+            disabled={
+              updatingStatus ||
+              (
+                pendingStatusChange?.nextStatus ===
+                  "picked_up" &&
+                !selectedDeliveryCompanyId
+              )
+            }
           >
             {updatingStatus ? (
               <>
