@@ -32,9 +32,15 @@ export default function CartPanel({
         الطلب الحالي
       </Card.Header>
 
-      <Card.Body className="d-flex flex-column p-2">
+      <Card.Body
+        className="d-flex flex-column p-2"
+        style={{ minHeight: 0 }}
+      >
 
-        <ListGroup className="flex-grow-1 overflow-auto">
+        <ListGroup
+          className="flex-grow-1 overflow-auto"
+          style={{ minHeight: 0 }}
+        >
 
           {cartItems.map(
             (item, index) => (
@@ -119,7 +125,10 @@ export default function CartPanel({
 
         </ListGroup>
 
-        <div className="mt-3">
+        <div
+          className="mt-3"
+          style={{ flexShrink: 0 }}
+        >
 
           <div className="fw-bold fs-5 text-center mb-3">
             المجموع:{" "}

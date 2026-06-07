@@ -3,6 +3,7 @@ import Login from "../pages/Login"
 import Cashier from "../pages/Cashier"
 import Orders from "../pages/Orders"
 import Customers from "../pages/Customers"
+import Reports from "../pages/Reports"
 import Home from "../pages/Home"
 import AppNavbar from "../components/layout/AppNavBar"
 
@@ -17,6 +18,7 @@ export default function AppRouter() {
         <Route path="/login" element={<Login />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/reports" element={<Reports />} />
       </Routes>
     </>
   )

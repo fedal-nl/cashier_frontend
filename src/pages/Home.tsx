@@ -9,7 +9,7 @@ export default function Home() {
       </h1>
 
       <Row className="g-4">
-        <Col md={6}>
+        <Col md={4}>
           <Card
             as={Link}
             to="/cashier"
@@ -22,7 +22,7 @@ export default function Home() {
           </Card>
         </Col>
 
-        <Col md={6}>
+        <Col md={4}>
           <Card
             as={Link}
             to="/orders"
@@ -31,6 +31,19 @@ export default function Home() {
             <h3>الطلبات</h3>
             <p>
               متابعة حالة الطلبات
+            </p>
+          </Card>
+        </Col>
+
+        <Col md={4}>
+          <Card
+            as={Link}
+            to="/reports"
+            className="p-5 text-center text-decoration-none shadow"
+          >
+            <h3>التقارير</h3>
+            <p>
+              متابعة المبيعات والعملاء
             </p>
           </Card>
         </Col>

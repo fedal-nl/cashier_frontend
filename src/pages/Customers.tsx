@@ -7,7 +7,6 @@ import {
 import {
   Alert,
   Button,
-  ButtonGroup,
   Col,
   Container,
   Form,
@@ -20,7 +19,6 @@ import {
 
 import {
   createCustomer,
-  deleteCustomer,
   listCustomers,
   updateCustomer,
   type Customer,
@@ -169,28 +167,6 @@ export default function Customers() {
     }
   }
 
-  async function handleDelete(
-    customer: Customer
-  ) {
-    const confirmed = window.confirm(
-      `حذف العميل ${customer.name}؟`
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    setError(null)
-
-    try {
-      await deleteCustomer(customer.id)
-      await loadCustomers()
-    } catch (err) {
-      console.error(err)
-      setError("تعذر حذف العميل")
-    }
-  }
-
   return (
     <Container
       fluid
@@ -292,28 +268,17 @@ export default function Customers() {
                       {customer.address || "-"}
                     </td>
                     <td className="text-start">
-                      <ButtonGroup size="sm">
-                        <Button
-                          variant="outline-primary"
-                          onClick={() =>
-                            openEditModal(
-                              customer
-                            )
-                          }
-                        >
-                          تعديل
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          onClick={() =>
-                            handleDelete(
-                              customer
-                            )
-                          }
-                        >
-                          حذف
-                        </Button>
-                      </ButtonGroup>
+                      <Button
+                        size="sm"
+                        variant="outline-primary"
+                        onClick={() =>
+                          openEditModal(
+                            customer
+                          )
+                        }
+                      >
+                        تعديل
+                      </Button>
                     </td>
                   </tr>
                 )

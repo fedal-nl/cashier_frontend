@@ -6,13 +6,18 @@ import {
   Row,
   Col,
   Modal,
+  Form,
 } from "react-bootstrap"
 import { useNavigate } from "react-router-dom"
 
 import type { Category, MenuItem } from "../types/menu"
 import type { CartItem, CartModification } from "../types/cart"
 
-import { fetchMenu } from "../services/api"
+import {
+  fetchBranches,
+  fetchMenu,
+  type Branch,
+} from "../services/api"
 import { createOrder } from "../services/orders"
 import { createCustomer } from "../services/customers"
 
@@ -33,6 +38,12 @@ export default function Cashier() {
   const [selectedCategory, setSelectedCategory] =
     useState<Category | null>(null)
 
+  const [branches, setBranches] =
+    useState<Branch[]>([])
+
+  const [selectedBranchId, setSelectedBranchId] =
+    useState("")
+
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -48,11 +59,32 @@ export default function Cashier() {
     useState<string | null>(null)
 
   useEffect(() => {
-    fetchMenu().then((data: Category[]) => {
-      setCategories(data)
-      setSelectedCategory(data[0])
-    })
+    fetchBranches()
+      .then(setBranches)
+      .catch((error) => {
+        console.error(error)
+      })
   }, [])
+
+  useEffect(() => {
+    fetchMenu(selectedBranchId)
+      .then((data: Category[]) => {
+        setCategories(data)
+        setSelectedCategory(data[0] ?? null)
+      })
+      .catch((error) => {
+        console.error(error)
+        setCategories([])
+        setSelectedCategory(null)
+      })
+  }, [selectedBranchId])
+
+  function handleBranchChange(
+    branchId: string
+  ) {
+    setSelectedBranchId(branchId)
+    setCartItems([])
+  }
 
   function addToCart(
     item: MenuItem,
@@ -153,6 +185,9 @@ export default function Cashier() {
 
     await createOrder({
       customer_id: customerId,
+      ...(selectedBranchId && {
+        branch_id: Number(selectedBranchId),
+      }),
       note: "",
       status: "created",
       items: cartItems.map((item) => ({
@@ -191,7 +226,10 @@ export default function Cashier() {
   }
 
 return (
-    <Container fluid className="p-3" style={{ height: "calc(100vh - 56px)", overflow: "auto" }}>
+    <Container
+      fluid
+      className="cashier-page p-3"
+    >
       {checkoutError && (
         <Alert
           variant="danger"
@@ -204,9 +242,46 @@ return (
         </Alert>
       )}
 
-      <Row className="h-100" style={{ overflow: "hidden" }}>
+      <div className="mb-3" dir="rtl">
+        <Form.Group
+          className="branch-selector"
+          controlId="cashier-branch"
+        >
+          <Form.Label>
+            الفرع
+          </Form.Label>
+          <Form.Select
+            value={selectedBranchId}
+            onChange={(event) =>
+              handleBranchChange(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              كل الفروع
+            </option>
+            {branches.map((branch) => (
+              <option
+                key={branch.id}
+                value={branch.id}
+              >
+                {branch.name}
+                {branch.location
+                  ? ` - ${branch.location}`
+                  : ""}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+      </div>
 
-        <Col md={2}>
+      <Row className="cashier-row g-3">
+
+        <Col
+          lg={2}
+          className="cashier-scroll-column"
+        >
           <CategoryList
             categories={categories}
             selectedCategory={selectedCategory}
@@ -214,7 +289,10 @@ return (
           />
         </Col>
 
-        <Col md={7}>
+        <Col
+          lg={7}
+          className="cashier-scroll-column"
+        >
           <MenuGrid
             category={selectedCategory}
             onItemClick={(item) => {
@@ -224,7 +302,10 @@ return (
           />
         </Col>
 
-        <Col md={3}>
+        <Col
+          lg={3}
+          className="cashier-cart-column"
+        >
           <CartPanel
             cartItems={cartItems}
             onAdd={increase}

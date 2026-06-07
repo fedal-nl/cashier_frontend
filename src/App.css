@@ -1,3 +1,50 @@
+.cashier-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 56px);
+  overflow: auto;
+}
+
+.cashier-row {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-scroll-column,
+.cashier-cart-column {
+  min-height: 0;
+}
+
+.cashier-cart-column {
+  min-height: 420px;
+}
+
+.branch-selector {
+  max-width: 320px;
+}
+
+@media (min-width: 992px) {
+  .cashier-page {
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  .cashier-row {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .cashier-scroll-column {
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .cashier-cart-column {
+    height: 100%;
+    min-height: 0;
+  }
+}
+
 /* .counter {
   font-size: 16px;
   padding: 5px 10px;

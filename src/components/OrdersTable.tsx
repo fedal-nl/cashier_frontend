@@ -11,6 +11,12 @@ export type Order = {
   customer: {
     name: string
   }
+  branch?: {
+    id: number
+    name: string
+    location?: string
+    is_active: boolean
+  } | null
   total_price: number
   status: string
   created_at: string
@@ -40,6 +46,7 @@ export default function OrdersTable({
         <tr>
           <th>#</th>
           <th>الزبون</th>
+          <th>الفرع</th>
           <th>وقت الإنشاء</th>
           <th>وقت التحديث</th>
           <th>المبلغ</th>
@@ -63,6 +70,10 @@ export default function OrdersTable({
                 order.customer
                   .name
               }
+            </td>
+
+            <td>
+              {order.branch?.name ?? "-"}
             </td>
 
             <td>
