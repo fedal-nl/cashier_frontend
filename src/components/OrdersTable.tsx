@@ -2,6 +2,7 @@ import {
   Table,
   Form,
 } from "react-bootstrap"
+import { Link } from "react-router-dom"
 
 import { formatCurrency } from "../utils/formatters"
 import { ORDER_STATUS_LABELS } from "../constants/orderstatus"
@@ -51,6 +52,7 @@ export default function OrdersTable({
           <th>وقت التحديث</th>
           <th>المبلغ</th>
           <th>الحالة</th>
+          <th>التفاصيل</th>
         </tr>
       </thead>
 
@@ -131,6 +133,15 @@ export default function OrdersTable({
                   )
                 )}
               </Form.Select>
+            </td>
+
+            <td>
+              <Link
+                to={`/orders/${order.id}`}
+                className="btn btn-sm btn-outline-primary"
+              >
+                طباعة
+              </Link>
             </td>
           </tr>
         ))}

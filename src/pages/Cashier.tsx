@@ -26,7 +26,7 @@ import MenuGrid from "../components/MenuGrid"
 import CartPanel from "../components/CartPanel"
 import MenuItemModal from "../components/MenuItemModal"
 import CheckoutModal, {
-  type CheckoutCustomer,
+  type CheckoutData,
 } from "../components/CheckoutModal"
 
 
@@ -54,6 +54,9 @@ export default function Cashier() {
     showOrderSuccess,
     setShowOrderSuccess,
   ] = useState(false)
+
+  const [createdOrderId, setCreatedOrderId] =
+    useState<string | null>(null)
 
   const [checkoutError, setCheckoutError] =
     useState<string | null>(null)
@@ -164,10 +167,12 @@ export default function Cashier() {
   }
 
   async function handleCheckout(
-    customerData: CheckoutCustomer
+    checkoutData: CheckoutData
   ) {
     try {
       setCheckoutError(null)
+      const customerData =
+        checkoutData.customer
       let customerId
 
       if ("customer_id" in customerData) {
@@ -183,12 +188,13 @@ export default function Cashier() {
           customer.customer_id
       }
 
-    await createOrder({
+    const order =
+      await createOrder({
       customer_id: customerId,
       ...(selectedBranchId && {
         branch_id: Number(selectedBranchId),
       }),
-      note: "",
+      note: checkoutData.orderNote ?? "",
       status: "created",
       items: cartItems.map((item) => ({
         menu_item_id: item.menuItem.id,
@@ -212,10 +218,13 @@ export default function Cashier() {
     })
       setCartItems([])
       setShowCheckout(false)
+      setCreatedOrderId(order.order_id)
       setShowOrderSuccess(true)
 
       window.setTimeout(() => {
-        navigate("/orders")
+        navigate(
+          `/orders/${order.order_id}`
+        )
       }, 1200)
     } catch (error) {
       console.error(error)
@@ -348,7 +357,7 @@ return (
             تم إنشاء الطلب بنجاح
           </div>
           <div className="text-muted">
-            سيتم نقلك إلى صفحة الطلبات
+            سيتم نقلك إلى صفحة تفاصيل الطلب
           </div>
         </Modal.Body>
 
@@ -356,10 +365,14 @@ return (
           <Button
             variant="success"
             onClick={() =>
-              navigate("/orders")
+              navigate(
+                createdOrderId
+                  ? `/orders/${createdOrderId}`
+                  : "/orders"
+              )
             }
           >
-            عرض الطلبات
+            عرض الطلب
           </Button>
         </Modal.Footer>
       </Modal>

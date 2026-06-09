@@ -22,12 +22,62 @@ type CreateOrderPayload = {
   status: string
 }
 
+export type OrderCustomer = {
+  id: number
+  name: string
+  email?: string
+  phone_number?: string
+  address?: string
+}
+
+export type OrderBranch = {
+  id: number
+  name: string
+  location?: string
+  is_active: boolean
+}
+
 export type DeliveryCompany = {
   id: number
   name?: string
   phone_number?: string
   website?: string
   contact_person?: string
+}
+
+export type OrderItemModification = {
+  id: number
+  ingredient_id: number
+  ingredient_name_ar: string
+  ingredient_price: string
+  unit_id?: number | null
+  unit_name_ar?: string | null
+  quantity: number
+  modification_type: "added" | "removed"
+}
+
+export type OrderItem = {
+  id: number
+  menu_item_id: number
+  menu_item_name_ar: string
+  menu_item_base_price: string
+  quantity: number
+  total_price: string
+  order_item_note?: string
+  modifications: OrderItemModification[]
+}
+
+export type OrderDetail = {
+  id: string
+  customer: OrderCustomer
+  branch?: OrderBranch | null
+  delivery_company?: DeliveryCompany | null
+  status: string
+  note?: string
+  created_at: string
+  updated_at: string
+  total_price: string
+  items: OrderItem[]
 }
 
 type UpdateOrderStatusPayload = {
@@ -67,6 +117,16 @@ export async function fetchOrders(
 
   const response = await api.get(
     `/orders/list/?${params.toString()}`
+  )
+
+  return response.data
+}
+
+export async function fetchOrder(
+  orderId: string
+) {
+  const response = await api.get<OrderDetail>(
+    `/orders/${orderId}/`
   )
 
   return response.data

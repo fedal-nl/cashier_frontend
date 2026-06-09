@@ -20,11 +20,16 @@ export type CheckoutCustomer =
   | { customer_id: number }
   | CustomerPayload
 
+export type CheckoutData = {
+  customer: CheckoutCustomer
+  orderNote?: string
+}
+
 type Props = {
   show: boolean
   onClose: () => void
   onSubmit: (
-    customer: CheckoutCustomer
+    data: CheckoutData
   ) => void
 }
 
@@ -40,6 +45,9 @@ export default function CheckoutModal({
     useState("")
 
   const [address, setAddress] =
+    useState("")
+
+  const [orderNote, setOrderNote] =
     useState("")
 
   const [
@@ -60,6 +68,7 @@ export default function CheckoutModal({
     setName("")
     setPhone("")
     setAddress("")
+    setOrderNote("")
     setSelectedCustomer(null)
     setSearched(false)
     setSearching(false)
@@ -127,8 +136,12 @@ export default function CheckoutModal({
 
     if (selectedCustomer) {
       onSubmit({
-        customer_id:
-          selectedCustomer.id,
+        customer: {
+          customer_id:
+            selectedCustomer.id,
+        },
+        orderNote:
+          orderNote.trim() || undefined,
       })
       handleClose()
       return
@@ -140,11 +153,15 @@ export default function CheckoutModal({
     }
 
     onSubmit({
-      name: name.trim(),
-      phone_number:
-        phone.trim() || undefined,
-      address:
-        address.trim() || undefined,
+      customer: {
+        name: name.trim(),
+        phone_number:
+          phone.trim() || undefined,
+        address:
+          address.trim() || undefined,
+      },
+      orderNote:
+        orderNote.trim() || undefined,
     })
 
     handleClose()
@@ -254,7 +271,7 @@ export default function CheckoutModal({
             />
           </Form.Group>
 
-          <Form.Group>
+          <Form.Group className="mb-3">
             <Form.Label>
               العنوان
             </Form.Label>
@@ -269,6 +286,24 @@ export default function CheckoutModal({
               disabled={Boolean(
                 selectedCustomer
               )}
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>
+              ملاحظة عامة للطلب
+            </Form.Label>
+
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={orderNote}
+              onChange={(e) =>
+                setOrderNote(
+                  e.target.value
+                )
+              }
+              placeholder="مثال: يرجى تجهيز الطلب بسرعة"
             />
           </Form.Group>
       </Modal.Body>
