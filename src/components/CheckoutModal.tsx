@@ -15,6 +15,7 @@ import {
   type Customer,
   type CustomerPayload,
 } from "../services/customers"
+import type { DeliveryCompany } from "../services/orders"
 
 export type CheckoutCustomer =
   | { customer_id: number }
@@ -22,11 +23,13 @@ export type CheckoutCustomer =
 
 export type CheckoutData = {
   customer: CheckoutCustomer
+  delivery_company_id: number
   orderNote?: string
 }
 
 type Props = {
   show: boolean
+  deliveryCompanies: DeliveryCompany[]
   onClose: () => void
   onSubmit: (
     data: CheckoutData
@@ -35,6 +38,7 @@ type Props = {
 
 export default function CheckoutModal({
   show,
+  deliveryCompanies,
   onClose,
   onSubmit,
 }: Props) {
@@ -49,6 +53,11 @@ export default function CheckoutModal({
 
   const [orderNote, setOrderNote] =
     useState("")
+
+  const [
+    selectedDeliveryCompanyId,
+    setSelectedDeliveryCompanyId,
+  ] = useState("")
 
   const [
     selectedCustomer,
@@ -69,6 +78,7 @@ export default function CheckoutModal({
     setPhone("")
     setAddress("")
     setOrderNote("")
+    setSelectedDeliveryCompanyId("")
     setSelectedCustomer(null)
     setSearched(false)
     setSearching(false)
@@ -135,11 +145,19 @@ export default function CheckoutModal({
     event.preventDefault()
 
     if (selectedCustomer) {
+      if (!selectedDeliveryCompanyId) {
+        setError("اختر شركة التوصيل")
+        return
+      }
+
       onSubmit({
         customer: {
           customer_id:
             selectedCustomer.id,
         },
+        delivery_company_id: Number(
+          selectedDeliveryCompanyId
+        ),
         orderNote:
           orderNote.trim() || undefined,
       })
@@ -152,6 +170,11 @@ export default function CheckoutModal({
       return
     }
 
+    if (!selectedDeliveryCompanyId) {
+      setError("اختر شركة التوصيل")
+      return
+    }
+
     onSubmit({
       customer: {
         name: name.trim(),
@@ -160,6 +183,9 @@ export default function CheckoutModal({
         address:
           address.trim() || undefined,
       },
+      delivery_company_id: Number(
+        selectedDeliveryCompanyId
+      ),
       orderNote:
         orderNote.trim() || undefined,
     })
@@ -287,6 +313,42 @@ export default function CheckoutModal({
                 selectedCustomer
               )}
             />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>
+              شركة التوصيل
+            </Form.Label>
+
+            <Form.Select
+              value={selectedDeliveryCompanyId}
+              onChange={(e) =>
+                setSelectedDeliveryCompanyId(
+                  e.target.value
+                )
+              }
+              required
+            >
+              <option value="">
+                اختر شركة التوصيل
+              </option>
+
+              {deliveryCompanies.map((company) => (
+                <option
+                  key={company.id}
+                  value={company.id}
+                >
+                  {company.name ||
+                    `شركة رقم ${company.id}`}
+                </option>
+              ))}
+            </Form.Select>
+
+            {deliveryCompanies.length === 0 && (
+              <div className="text-muted small mt-2">
+                لا توجد شركات توصيل متاحة
+              </div>
+            )}
           </Form.Group>
 
           <Form.Group>

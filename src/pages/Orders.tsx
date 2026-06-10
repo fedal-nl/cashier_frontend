@@ -121,16 +121,6 @@ export default function Orders() {
       return
     }
 
-    if (
-      pendingStatusChange.nextStatus === "picked_up" &&
-      !selectedDeliveryCompanyId
-    ) {
-      setError(
-        "اختر شركة التوصيل قبل تأكيد الاستلام"
-      )
-      return
-    }
-
     setUpdatingStatus(true)
     setMessage(null)
     setError(null)
@@ -139,8 +129,7 @@ export default function Orders() {
       const payload = {
         status:
           pendingStatusChange.nextStatus,
-        ...(pendingStatusChange.nextStatus ===
-          "picked_up" && {
+        ...(selectedDeliveryCompanyId && {
           delivery_company_id: Number(
             selectedDeliveryCompanyId
           ),
@@ -267,50 +256,46 @@ export default function Orders() {
                 </span>
               </div>
 
-              {pendingStatusChange.nextStatus ===
-                "picked_up" && (
-                <Form.Group className="mt-4">
-                  <Form.Label>
-                    شركة التوصيل
-                  </Form.Label>
+              <Form.Group className="mt-4">
+                <Form.Label>
+                  شركة التوصيل
+                </Form.Label>
 
-                  <Form.Select
-                    value={
-                      selectedDeliveryCompanyId
-                    }
-                    onChange={(event) =>
-                      setSelectedDeliveryCompanyId(
-                        event.target.value
-                      )
-                    }
-                    disabled={updatingStatus}
-                    required
-                  >
-                    <option value="">
-                      اختر شركة التوصيل
-                    </option>
+                <Form.Select
+                  value={
+                    selectedDeliveryCompanyId
+                  }
+                  onChange={(event) =>
+                    setSelectedDeliveryCompanyId(
+                      event.target.value
+                    )
+                  }
+                  disabled={updatingStatus}
+                >
+                  <option value="">
+                    بدون تغيير
+                  </option>
 
-                    {deliveryCompanies.map(
-                      (company) => (
-                        <option
-                          key={company.id}
-                          value={company.id}
-                        >
-                          {company.name ||
-                            `شركة رقم ${company.id}`}
-                        </option>
-                      )
-                    )}
-                  </Form.Select>
-
-                  {deliveryCompanies.length ===
-                    0 && (
-                    <div className="text-muted small mt-2">
-                      لا توجد شركات توصيل متاحة
-                    </div>
+                  {deliveryCompanies.map(
+                    (company) => (
+                      <option
+                        key={company.id}
+                        value={company.id}
+                      >
+                        {company.name ||
+                          `شركة رقم ${company.id}`}
+                      </option>
+                    )
                   )}
-                </Form.Group>
-              )}
+                </Form.Select>
+
+                {deliveryCompanies.length ===
+                  0 && (
+                  <div className="text-muted small mt-2">
+                    لا توجد شركات توصيل متاحة
+                  </div>
+                )}
+              </Form.Group>
             </>
           )}
         </Modal.Body>
@@ -330,12 +315,7 @@ export default function Orders() {
             variant="primary"
             onClick={confirmStatusChange}
             disabled={
-              updatingStatus ||
-              (
-                pendingStatusChange?.nextStatus ===
-                  "picked_up" &&
-                !selectedDeliveryCompanyId
-              )
+              updatingStatus
             }
           >
             {updatingStatus ? (
