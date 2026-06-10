@@ -18,7 +18,11 @@ import {
   fetchMenu,
   type Branch,
 } from "../services/api"
-import { createOrder } from "../services/orders"
+import {
+  createOrder,
+  fetchDeliveryCompanies,
+  type DeliveryCompany,
+} from "../services/orders"
 import { createCustomer } from "../services/customers"
 
 import CategoryList from "../components/CategoryList"
@@ -44,6 +48,11 @@ export default function Cashier() {
   const [selectedBranchId, setSelectedBranchId] =
     useState("")
 
+  const [
+    deliveryCompanies,
+    setDeliveryCompanies,
+  ] = useState<DeliveryCompany[]>([])
+
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -63,13 +72,30 @@ export default function Cashier() {
 
   useEffect(() => {
     fetchBranches()
-      .then(setBranches)
+      .then((data) => {
+        setBranches(data)
+        setSelectedBranchId(
+          (currentBranchId) =>
+            currentBranchId ||
+            String(data[0]?.id ?? "")
+        )
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+
+    fetchDeliveryCompanies()
+      .then(setDeliveryCompanies)
       .catch((error) => {
         console.error(error)
       })
   }, [])
 
   useEffect(() => {
+    if (!selectedBranchId) {
+      return
+    }
+
     fetchMenu(selectedBranchId)
       .then((data: Category[]) => {
         setCategories(data)
@@ -85,8 +111,14 @@ export default function Cashier() {
   function handleBranchChange(
     branchId: string
   ) {
+    if (!branchId) {
+      return
+    }
+
     setSelectedBranchId(branchId)
     setCartItems([])
+    setSelectedItem(null)
+    setShowModal(false)
   }
 
   function addToCart(
@@ -171,6 +203,14 @@ export default function Cashier() {
   ) {
     try {
       setCheckoutError(null)
+
+      if (!selectedBranchId) {
+        setCheckoutError(
+          "اختر الفرع قبل إنشاء الطلب"
+        )
+        return
+      }
+
       const customerData =
         checkoutData.customer
       let customerId
@@ -191,9 +231,9 @@ export default function Cashier() {
     const order =
       await createOrder({
       customer_id: customerId,
-      ...(selectedBranchId && {
-        branch_id: Number(selectedBranchId),
-      }),
+      branch_id: Number(selectedBranchId),
+      delivery_company_id:
+        checkoutData.delivery_company_id,
       note: checkoutData.orderNote ?? "",
       status: "created",
       items: cartItems.map((item) => ({
@@ -266,10 +306,8 @@ return (
                 event.target.value
               )
             }
+            required
           >
-            <option value="">
-              كل الفروع
-            </option>
             {branches.map((branch) => (
               <option
                 key={branch.id}
@@ -335,6 +373,7 @@ return (
       )}
       <CheckoutModal
         show={showCheckout}
+        deliveryCompanies={deliveryCompanies}
         onClose={() =>
           setShowCheckout(false)
         }
