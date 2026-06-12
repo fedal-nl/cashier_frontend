@@ -7,7 +7,7 @@ import {
   Alert,
 } from "react-bootstrap"
 import { useNavigate } from "react-router-dom"
-import { useAuth } from "../context/authContext.tsx"
+import { useAuth } from "../context/useAuth"
 
 export default function Login() {
   const { login } = useAuth()

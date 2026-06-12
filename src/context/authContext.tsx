@@ -1,32 +1,15 @@
 import {
-  createContext,
-  useContext,
   useEffect,
   useState,
 } from "react"
 
+import { AuthContext } from "./authContextValue"
 import {
   login as loginRequest,
   logout as logoutRequest,
   getCurrentUser,
 } from "../services/auth"
 import { refreshCsrfToken } from "../services/api"
-
-
-type AuthContextType = {
-  isAuthenticated: boolean
-  username: string | null
-  login: (
-    username: string,
-    password: string
-  ) => Promise<void>
-  logout: () => Promise<void>
-}
-
-const AuthContext =
-  createContext<AuthContextType | null>(
-    null
-  )
 
 export function AuthProvider({
   children,
@@ -37,6 +20,9 @@ export function AuthProvider({
     isAuthenticated,
     setIsAuthenticated,
   ] = useState(false)
+
+  const [isLoading, setIsLoading] =
+    useState(true)
 
   const [
     username,
@@ -53,6 +39,9 @@ export function AuthProvider({
           }
         })
         .catch(() => {})
+        .finally(() => {
+          setIsLoading(false)
+        })
   }, [])
 
   async function login(
@@ -79,6 +68,7 @@ export function AuthProvider({
     <AuthContext.Provider
       value={{
         isAuthenticated,
+        isLoading,
         username,
         login,
         logout,
@@ -87,17 +77,4 @@ export function AuthProvider({
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context =
-    useContext(AuthContext)
-
-  if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider"
-    )
-  }
-
-  return context
 }
