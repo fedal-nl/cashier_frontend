@@ -1,15 +1,12 @@
 import { Navbar, Nav, Container } from "react-bootstrap"
 import { Link } from "react-router-dom"
 import LogoutButton from "../LogoutButton"
-import { useAuth } from "../../context/authContext.tsx"
 
 export default function AppNavbar() {
-  const { isAuthenticated } = useAuth()
-
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container fluid>
-        <Navbar.Brand as={Link} to="/home">
+        <Navbar.Brand as={Link} to="/">
           كاشير مأكولات أهلنا
         </Navbar.Brand>
 
@@ -22,33 +19,23 @@ export default function AppNavbar() {
               الرئيسية
             </Nav.Link>
 
-            {!isAuthenticated && (
-              <Nav.Link as={Link} to="/login">
-                تسجيل الدخول
-              </Nav.Link>
-            )}
+            <Nav.Link as={Link} to="/cashier">
+              الكاشير
+            </Nav.Link>
 
-            {isAuthenticated && (
-              <>
-                <Nav.Link as={Link} to="/cashier">
-                  الكاشير
-                </Nav.Link>
+            <Nav.Link as={Link} to="/orders">
+              الطلبات
+            </Nav.Link>
 
-                <Nav.Link as={Link} to="/orders">
-                  الطلبات
-                </Nav.Link>
+            <Nav.Link as={Link} to="/customers">
+              العملاء
+            </Nav.Link>
 
-                <Nav.Link as={Link} to="/customers">
-                  العملاء
-                </Nav.Link>
+            <Nav.Link as={Link} to="/reports">
+              التقارير
+            </Nav.Link>
 
-                <Nav.Link as={Link} to="/reports">
-                  التقارير
-                </Nav.Link>
-
-                <LogoutButton />
-              </>
-            )}
+            <LogoutButton />
 
           </Nav>
         </Navbar.Collapse>
