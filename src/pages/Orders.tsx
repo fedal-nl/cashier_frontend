@@ -1,14 +1,20 @@
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react"
 
 import {
   Alert,
   Button,
+  Card,
+  Col,
   Container,
   Form,
   Modal,
+  Pagination,
+  Row,
   Spinner,
 } from "react-bootstrap"
 
@@ -29,12 +35,40 @@ type PendingStatusChange = {
   nextStatus: string
 }
 
+const PAGE_SIZE_OPTIONS = [
+  10,
+  25,
+  50,
+]
+
 export default function Orders() {
   const [orders, setOrders] =
     useState<Order[]>([])
 
+  const [
+    ordersForSummary,
+    setOrdersForSummary,
+  ] = useState<Order[]>([])
+
   const [search, setSearch] =
     useState("")
+
+  const [
+    appliedSearch,
+    setAppliedSearch,
+  ] = useState("")
+
+  const [currentPage, setCurrentPage] =
+    useState(1)
+
+  const [pageSize, setPageSize] =
+    useState(10)
+
+  const [loadingOrders, setLoadingOrders] =
+    useState(true)
+
+  const [totalOrders, setTotalOrders] =
+    useState(0)
 
   const [
     deliveryCompanies,
@@ -64,23 +98,257 @@ export default function Orders() {
   const [error, setError] =
     useState<string | null>(null)
 
-  async function loadOrders() {
-    const data =
-      await fetchOrders(
-        search
-      )
+  const loadOrders = useCallback(
+    async (
+      searchValue = appliedSearch
+    ) => {
+      setLoadingOrders(true)
 
-    setOrders(data)
-  }
+      try {
+        const data =
+          await fetchOrders(
+            {
+              search: searchValue,
+              page: currentPage,
+              pageSize,
+            }
+          )
+
+        setOrders(data.results)
+        setTotalOrders(data.count)
+      } finally {
+        setLoadingOrders(false)
+      }
+    },
+    [
+      appliedSearch,
+      currentPage,
+      pageSize,
+    ]
+  )
+
+  const loadOrdersForSummary =
+    useCallback(async () => {
+      const summaryOrders: Order[] = []
+      let page = 1
+      let hasNext = true
+
+      while (hasNext) {
+        const data = await fetchOrders({
+          page,
+          pageSize: 100,
+        })
+
+        summaryOrders.push(
+          ...data.results
+        )
+        hasNext = Boolean(data.next)
+        page += 1
+      }
+
+      setOrdersForSummary(
+        summaryOrders
+      )
+    }, [])
 
   useEffect(() => {
-    loadOrders()
+    let isActive = true
+
+    fetchOrders({
+      search: appliedSearch,
+      page: currentPage,
+      pageSize,
+    })
+      .then((data) => {
+        if (isActive) {
+          setOrders(data.results)
+          setTotalOrders(data.count)
+        }
+      })
+      .catch((err) => {
+        console.error(err)
+        if (isActive) {
+          setError(
+            "تعذر تحميل الطلبات"
+          )
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoadingOrders(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    currentPage,
+    appliedSearch,
+    pageSize,
+  ])
+
+  useEffect(() => {
+    let isActive = true
+
     fetchDeliveryCompanies()
-      .then(setDeliveryCompanies)
+      .then((data) => {
+        if (isActive) {
+          setDeliveryCompanies(data)
+        }
+      })
       .catch((err) => {
         console.error(err)
       })
+
+    return () => {
+      isActive = false
+    }
   }, [])
+
+  useEffect(() => {
+    let isActive = true
+    const summaryOrders: Order[] = []
+    let page = 1
+    let hasNext = true
+
+    async function loadSummary() {
+      try {
+        while (hasNext) {
+          const data =
+            await fetchOrders({
+              page,
+              pageSize: 100,
+            })
+
+          summaryOrders.push(
+            ...data.results
+          )
+          hasNext = Boolean(data.next)
+          page += 1
+        }
+
+        if (isActive) {
+          setOrdersForSummary(
+            summaryOrders
+          )
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    void loadSummary()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const todayStatusTotals =
+    useMemo(() => {
+      const today =
+        new Date()
+
+      const totals = Object.keys(
+        ORDER_STATUS_LABELS
+      ).reduce<Record<string, number>>(
+        (acc, status) => {
+          acc[status] = 0
+          return acc
+        },
+        {}
+      )
+
+      for (const order of ordersForSummary) {
+        const createdAt =
+          new Date(order.created_at)
+
+        const isToday =
+          createdAt.getFullYear() ===
+            today.getFullYear() &&
+          createdAt.getMonth() ===
+            today.getMonth() &&
+          createdAt.getDate() ===
+            today.getDate()
+
+        if (isToday) {
+          totals[order.status] =
+            (totals[order.status] ?? 0) + 1
+        }
+      }
+
+      return totals
+    }, [ordersForSummary])
+
+  const todayOrdersTotal =
+    useMemo(
+      () =>
+        Object.values(
+          todayStatusTotals
+        ).reduce(
+          (sum, count) => sum + count,
+          0
+        ),
+      [todayStatusTotals]
+    )
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      totalOrders / pageSize
+    )
+  )
+
+  const firstOrderNumber =
+    totalOrders === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1
+
+  const lastOrderNumber = Math.min(
+    currentPage * pageSize,
+    totalOrders
+  )
+
+  const paginationItems =
+    useMemo(() => {
+      const items: number[] = []
+      const start = Math.max(
+        1,
+        currentPage - 2
+      )
+      const end = Math.min(
+        totalPages,
+        currentPage + 2
+      )
+
+      for (
+        let page = start;
+        page <= end;
+        page += 1
+      ) {
+        items.push(page)
+      }
+
+      return items
+    }, [currentPage, totalPages])
+
+  function handleSearchSubmit(
+    event: React.FormEvent
+  ) {
+    event.preventDefault()
+    setAppliedSearch(
+      search.trim()
+    )
+    setCurrentPage(1)
+  }
+
+  function handlePageSizeChange(
+    value: string
+  ) {
+    setPageSize(Number(value))
+    setCurrentPage(1)
+  }
 
   async function handleStatusChange(
     id: string,
@@ -146,7 +414,10 @@ export default function Orders() {
       )
       setPendingStatusChange(null)
       setSelectedDeliveryCompanyId("")
-      await loadOrders()
+      await Promise.all([
+        loadOrders(),
+        loadOrdersForSummary(),
+      ])
     } catch (err) {
       console.error(err)
       setError(
@@ -173,6 +444,48 @@ export default function Orders() {
         الطلبات
       </h2>
 
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <div className="d-flex flex-column flex-lg-row gap-3 justify-content-between mb-3">
+            <div>
+              <h5 className="mb-1">
+                طلبات اليوم حسب الحالة
+              </h5>
+              <div className="text-muted small">
+                إجمالي طلبات اليوم:{" "}
+                {todayOrdersTotal}
+              </div>
+            </div>
+          </div>
+
+          <Row className="g-3">
+            {Object.entries(
+              ORDER_STATUS_LABELS
+            ).map(
+              ([status, label]) => (
+                <Col
+                  key={status}
+                  xs={6}
+                  md={4}
+                  xl={3}
+                >
+                  <div className="border rounded p-3 h-100">
+                    <div className="text-muted small mb-2">
+                      {label}
+                    </div>
+                    <div className="fs-4 fw-bold">
+                      {todayStatusTotals[
+                        status
+                      ] ?? 0}
+                    </div>
+                  </div>
+                </Col>
+              )
+            )}
+          </Row>
+        </Card.Body>
+      </Card>
+
       {message && (
         <Alert
           variant="success"
@@ -193,24 +506,161 @@ export default function Orders() {
         </Alert>
       )}
 
-      <Form.Control
+      <Form
         className="mb-3"
-        placeholder="بحث برقم الطلب"
-        value={search}
-        onChange={(e) =>
-          setSearch(
-            e.target.value
-          )
-        }
-        onKeyUp={loadOrders}
-      />
+        onSubmit={handleSearchSubmit}
+      >
+        <Row className="g-2 align-items-end">
+          <Col md={7} lg={8}>
+            <Form.Label>
+              بحث برقم الطلب أو اسم العميل
+            </Form.Label>
+            <Form.Control
+              placeholder="اكتب رقم الطلب أو اسم العميل ثم اضغط بحث"
+              value={search}
+              onChange={(e) =>
+                setSearch(
+                  e.target.value
+                )
+              }
+            />
+          </Col>
 
-      <OrdersTable
-        orders={orders}
-        onStatusChange={
-          handleStatusChange
-        }
-      />
+          <Col md={3} lg={2}>
+            <Form.Label>
+              عدد الصفوف
+            </Form.Label>
+            <Form.Select
+              value={pageSize}
+              onChange={(event) =>
+                handlePageSizeChange(
+                  event.target.value
+                )
+              }
+            >
+              {PAGE_SIZE_OPTIONS.map(
+                (size) => (
+                  <option
+                    key={size}
+                    value={size}
+                  >
+                    {size}
+                  </option>
+                )
+              )}
+            </Form.Select>
+          </Col>
+
+          <Col md={2}>
+            <Button
+              type="submit"
+              className="w-100"
+              disabled={loadingOrders}
+            >
+              بحث
+            </Button>
+          </Col>
+        </Row>
+      </Form>
+
+      {loadingOrders ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" />
+        </div>
+      ) : (
+        <>
+          <OrdersTable
+            orders={orders}
+            onStatusChange={
+              handleStatusChange
+            }
+          />
+
+          <div className="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-md-center mt-3">
+            <div className="text-muted small">
+              عرض {firstOrderNumber} إلى{" "}
+              {lastOrderNumber} من{" "}
+              {totalOrders} طلب
+            </div>
+
+            <Pagination className="mb-0">
+              <Pagination.First
+                onClick={() =>
+                  setCurrentPage(1)
+                }
+                disabled={
+                  currentPage === 1
+                }
+              />
+              <Pagination.Prev
+                onClick={() =>
+                  setCurrentPage(
+                    (page) =>
+                      Math.max(
+                        1,
+                        page - 1
+                      )
+                  )
+                }
+                disabled={
+                  currentPage === 1
+                }
+              />
+
+              {paginationItems[0] > 1 && (
+                <Pagination.Ellipsis disabled />
+              )}
+
+              {paginationItems.map(
+                (page) => (
+                  <Pagination.Item
+                    key={page}
+                    active={
+                      page === currentPage
+                    }
+                    onClick={() =>
+                      setCurrentPage(page)
+                    }
+                  >
+                    {page}
+                  </Pagination.Item>
+                )
+              )}
+
+              {paginationItems[
+                paginationItems.length - 1
+              ] < totalPages && (
+                <Pagination.Ellipsis disabled />
+              )}
+
+              <Pagination.Next
+                onClick={() =>
+                  setCurrentPage(
+                    (page) =>
+                      Math.min(
+                        totalPages,
+                        page + 1
+                      )
+                  )
+                }
+                disabled={
+                  currentPage === totalPages
+                }
+              />
+              <Pagination.Last
+                onClick={() =>
+                  setCurrentPage(
+                    totalPages
+                  )
+                }
+                disabled={
+                  currentPage === totalPages
+                }
+              />
+            </Pagination>
+          </div>
+        </>
+      )}
 
       <Modal
         show={Boolean(

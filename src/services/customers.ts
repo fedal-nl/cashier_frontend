@@ -1,4 +1,8 @@
 import api from "./api"
+import type {
+  PaginatedResponse,
+  PaginationParams,
+} from "../types/pagination"
 
 export type Customer = {
   id: number
@@ -25,9 +29,27 @@ export async function findCustomer(
   return response.data
 }
 
-export async function listCustomers() {
-  const response = await api.get<Customer[]>(
-    "/orders/customers/list/"
+export async function listCustomers({
+  page,
+  pageSize,
+}: PaginationParams = {}) {
+  const params = new URLSearchParams()
+
+  if (page) {
+    params.append("page", String(page))
+  }
+
+  if (pageSize) {
+    params.append(
+      "page_size",
+      String(pageSize)
+    )
+  }
+
+  const response = await api.get<
+    PaginatedResponse<Customer>
+  >(
+    `/orders/customers/list/?${params.toString()}`
   )
 
   return response.data
