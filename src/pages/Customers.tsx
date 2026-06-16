@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -12,6 +13,7 @@ import {
   Form,
   InputGroup,
   Modal,
+  Pagination,
   Row,
   Spinner,
   Table,
@@ -32,6 +34,12 @@ const emptyForm: CustomerPayload = {
   address: "",
 }
 
+const PAGE_SIZE_OPTIONS = [
+  10,
+  25,
+  50,
+]
+
 export default function Customers() {
   const [customers, setCustomers] =
     useState<Customer[]>([])
@@ -41,6 +49,17 @@ export default function Customers() {
 
   const [loading, setLoading] =
     useState(true)
+
+  const [currentPage, setCurrentPage] =
+    useState(1)
+
+  const [pageSize, setPageSize] =
+    useState(10)
+
+  const [
+    totalCustomers,
+    setTotalCustomers,
+  ] = useState(0)
 
   const [saving, setSaving] =
     useState(false)
@@ -79,24 +98,57 @@ export default function Customers() {
     )
   }, [customers, search])
 
-  useEffect(() => {
-    loadCustomers()
-  }, [])
-
-  async function loadCustomers() {
+  const loadCustomers = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const data = await listCustomers()
-      setCustomers(data)
+      const data =
+        await listCustomers({
+          page: currentPage,
+          pageSize,
+        })
+      setCustomers(data.results)
+      setTotalCustomers(data.count)
     } catch (err) {
       console.error(err)
       setError("تعذر تحميل العملاء")
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, pageSize])
+
+  useEffect(() => {
+    let isActive = true
+
+    listCustomers({
+      page: currentPage,
+      pageSize,
+    })
+      .then((data) => {
+        if (isActive) {
+          setCustomers(data.results)
+          setTotalCustomers(data.count)
+        }
+      })
+      .catch((err) => {
+        console.error(err)
+        if (isActive) {
+          setError(
+            "تعذر تحميل العملاء"
+          )
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [currentPage, pageSize])
 
   function openCreateModal() {
     setEditingCustomer(null)
@@ -167,6 +219,53 @@ export default function Customers() {
     }
   }
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      totalCustomers / pageSize
+    )
+  )
+
+  const firstCustomerNumber =
+    totalCustomers === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1
+
+  const lastCustomerNumber = Math.min(
+    currentPage * pageSize,
+    totalCustomers
+  )
+
+  const paginationItems =
+    useMemo(() => {
+      const items: number[] = []
+      const start = Math.max(
+        1,
+        currentPage - 2
+      )
+      const end = Math.min(
+        totalPages,
+        currentPage + 2
+      )
+
+      for (
+        let page = start;
+        page <= end;
+        page += 1
+      ) {
+        items.push(page)
+      }
+
+      return items
+    }, [currentPage, totalPages])
+
+  function handlePageSizeChange(
+    value: string
+  ) {
+    setPageSize(Number(value))
+    setCurrentPage(1)
+  }
+
   return (
     <Container
       fluid
@@ -207,11 +306,33 @@ export default function Customers() {
           </InputGroup>
         </Col>
 
+        <Col lg={2}>
+          <Form.Select
+            value={pageSize}
+            onChange={(event) =>
+              handlePageSizeChange(
+                event.target.value
+              )
+            }
+          >
+            {PAGE_SIZE_OPTIONS.map(
+              (size) => (
+                <option
+                  key={size}
+                  value={size}
+                >
+                  {size} عميل
+                </option>
+              )
+            )}
+          </Form.Select>
+        </Col>
+
         <Col
-          lg={5}
+          lg={3}
           className="customers-count"
         >
-          {filteredCustomers.length} عميل
+          {totalCustomers} عميل
         </Col>
       </Row>
 
@@ -287,6 +408,77 @@ export default function Customers() {
           </Table>
         )}
       </div>
+
+      {!loading && (
+        <div className="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-md-center mt-3">
+          <div className="text-muted small">
+            عرض {firstCustomerNumber} إلى{" "}
+            {lastCustomerNumber} من{" "}
+            {totalCustomers} عميل
+          </div>
+
+          <Pagination className="mb-0">
+            <Pagination.First
+              onClick={() =>
+                setCurrentPage(1)
+              }
+              disabled={currentPage === 1}
+            />
+            <Pagination.Prev
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.max(1, page - 1)
+                )
+              }
+              disabled={currentPage === 1}
+            />
+
+            {paginationItems[0] > 1 && (
+              <Pagination.Ellipsis disabled />
+            )}
+
+            {paginationItems.map((page) => (
+              <Pagination.Item
+                key={page}
+                active={page === currentPage}
+                onClick={() =>
+                  setCurrentPage(page)
+                }
+              >
+                {page}
+              </Pagination.Item>
+            ))}
+
+            {paginationItems[
+              paginationItems.length - 1
+            ] < totalPages && (
+              <Pagination.Ellipsis disabled />
+            )}
+
+            <Pagination.Next
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(
+                    totalPages,
+                    page + 1
+                  )
+                )
+              }
+              disabled={
+                currentPage === totalPages
+              }
+            />
+            <Pagination.Last
+              onClick={() =>
+                setCurrentPage(totalPages)
+              }
+              disabled={
+                currentPage === totalPages
+              }
+            />
+          </Pagination>
+        </div>
+      )}
 
       <Modal
         show={showModal}

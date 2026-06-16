@@ -1,4 +1,8 @@
 import api from "./api"
+import type {
+  PaginatedResponse,
+  PaginationParams,
+} from "../types/pagination"
 
 type OrderModificationPayload = {
   ingredient_id: number
@@ -98,26 +102,41 @@ export async function createOrder(
 }
 
 export async function fetchOrders(
-  search?: string,
-  customer?: string,
-  status?: string
+  params: PaginationParams & {
+    search?: string
+    customer?: string
+    status?: string
+  } = {}
 ) {
-  const params = new URLSearchParams()
+  const query = new URLSearchParams()
 
-  if (search) {
-    params.append("search", search)
+  if (params.search) {
+    query.append("search", params.search)
   }
 
-  if (customer) {
-    params.append("customer", customer)
+  if (params.customer) {
+    query.append("customer", params.customer)
   }
 
-  if (status) {
-    params.append("status", status)
+  if (params.status) {
+    query.append("status", params.status)
   }
 
-  const response = await api.get(
-    `/orders/list/?${params.toString()}`
+  if (params.page) {
+    query.append("page", String(params.page))
+  }
+
+  if (params.pageSize) {
+    query.append(
+      "page_size",
+      String(params.pageSize)
+    )
+  }
+
+  const response = await api.get<
+    PaginatedResponse<OrderDetail>
+  >(
+    `/orders/list/?${query.toString()}`
   )
 
   return response.data

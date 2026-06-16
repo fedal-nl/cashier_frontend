@@ -18,7 +18,7 @@ export type Order = {
     location?: string
     is_active: boolean
   } | null
-  total_price: number
+  total_price: number | string
   status: string
   created_at: string
   updated_at: string
@@ -57,8 +57,18 @@ export default function OrdersTable({
       </thead>
 
       <tbody>
+        {orders.length === 0 && (
+          <tr>
+            <td
+              colSpan={8}
+              className="text-center text-muted py-4"
+            >
+              لا توجد طلبات للعرض
+            </td>
+          </tr>
+        )}
+
         {orders.map((order) => (
-            
           <tr key={order.id}>
             <td>
               {order.id.slice(
@@ -96,7 +106,9 @@ export default function OrdersTable({
 
             <td>
               {formatCurrency(
-                order.total_price
+                Number(
+                  order.total_price
+                )
               )}
             </td>
 
