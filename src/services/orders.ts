@@ -85,6 +85,14 @@ export type OrderDetail = {
   items: OrderItem[]
 }
 
+export type TodayOrderSummary = {
+  total_orders: number
+  total_revenue: string
+  total_existing_customers_ordered: number
+  total_new_customers_ordered: number
+  orders_by_status: Record<string, number>
+}
+
 type UpdateOrderStatusPayload = {
   status: string
   delivery_company_id?: number
@@ -137,6 +145,17 @@ export async function fetchOrders(
     PaginatedResponse<OrderDetail>
   >(
     `/orders/list/?${query.toString()}`
+  )
+
+  return response.data
+}
+
+/**
+ * Fetches today's order, revenue, status, and customer summary totals.
+ */
+export async function fetchTodayOrderSummary() {
+  const response = await api.get<TodayOrderSummary>(
+    "/orders/summary/today/"
   )
 
   return response.data
