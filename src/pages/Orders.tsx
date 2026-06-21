@@ -21,11 +21,14 @@ import {
 import OrdersTable from "../components/OrdersTable"
 import type { Order } from "../components/OrdersTable"
 import { ORDER_STATUS_LABELS } from "../constants/orderstatus"
+import { formatCurrency } from "../utils/formatters"
 
 import {
   fetchDeliveryCompanies,
   fetchOrders,
+  fetchTodayOrderSummary,
   type DeliveryCompany,
+  type TodayOrderSummary,
   updateOrderStatus,
 } from "../services/orders"
 
@@ -44,11 +47,6 @@ const PAGE_SIZE_OPTIONS = [
 export default function Orders() {
   const [orders, setOrders] =
     useState<Order[]>([])
-
-  const [
-    ordersForSummary,
-    setOrdersForSummary,
-  ] = useState<Order[]>([])
 
   const [search, setSearch] =
     useState("")
@@ -69,6 +67,13 @@ export default function Orders() {
 
   const [totalOrders, setTotalOrders] =
     useState(0)
+
+  const [
+    todaySummary,
+    setTodaySummary,
+  ] = useState<TodayOrderSummary | null>(
+    null
+  )
 
   const [
     deliveryCompanies,
@@ -127,28 +132,12 @@ export default function Orders() {
     ]
   )
 
-  const loadOrdersForSummary =
+  const loadTodaySummary =
     useCallback(async () => {
-      const summaryOrders: Order[] = []
-      let page = 1
-      let hasNext = true
+      const data =
+        await fetchTodayOrderSummary()
 
-      while (hasNext) {
-        const data = await fetchOrders({
-          page,
-          pageSize: 100,
-        })
-
-        summaryOrders.push(
-          ...data.results
-        )
-        hasNext = Boolean(data.next)
-        page += 1
-      }
-
-      setOrdersForSummary(
-        summaryOrders
-      )
+      setTodaySummary(data)
     }, [])
 
   useEffect(() => {
@@ -207,49 +196,13 @@ export default function Orders() {
   }, [])
 
   useEffect(() => {
-    let isActive = true
-    const summaryOrders: Order[] = []
-    let page = 1
-    let hasNext = true
-
-    async function loadSummary() {
-      try {
-        while (hasNext) {
-          const data =
-            await fetchOrders({
-              page,
-              pageSize: 100,
-            })
-
-          summaryOrders.push(
-            ...data.results
-          )
-          hasNext = Boolean(data.next)
-          page += 1
-        }
-
-        if (isActive) {
-          setOrdersForSummary(
-            summaryOrders
-          )
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
-    void loadSummary()
-
-    return () => {
-      isActive = false
-    }
-  }, [])
+    loadTodaySummary().catch((err) => {
+      console.error(err)
+    })
+  }, [loadTodaySummary])
 
   const todayStatusTotals =
     useMemo(() => {
-      const today =
-        new Date()
-
       const totals = Object.keys(
         ORDER_STATUS_LABELS
       ).reduce<Record<string, number>>(
@@ -260,38 +213,34 @@ export default function Orders() {
         {}
       )
 
-      for (const order of ordersForSummary) {
-        const createdAt =
-          new Date(order.created_at)
-
-        const isToday =
-          createdAt.getFullYear() ===
-            today.getFullYear() &&
-          createdAt.getMonth() ===
-            today.getMonth() &&
-          createdAt.getDate() ===
-            today.getDate()
-
-        if (isToday) {
-          totals[order.status] =
-            (totals[order.status] ?? 0) + 1
-        }
+      if (!todaySummary) {
+        return totals
       }
 
+      Object.entries(
+        todaySummary.orders_by_status
+      ).forEach(([status, count]) => {
+        totals[status] = count
+      })
+
       return totals
-    }, [ordersForSummary])
+    }, [todaySummary])
 
   const todayOrdersTotal =
-    useMemo(
-      () =>
-        Object.values(
-          todayStatusTotals
-        ).reduce(
-          (sum, count) => sum + count,
-          0
-        ),
-      [todayStatusTotals]
-    )
+    todaySummary?.total_orders ?? 0
+
+  const todayRevenue = Number(
+    todaySummary?.total_revenue ?? 0
+  )
+
+  const todayNewCustomers =
+    todaySummary?.total_new_customers_ordered ??
+    0
+
+  const todayExistingCustomers =
+    todaySummary
+      ?.total_existing_customers_ordered ??
+    0
 
   const totalPages = Math.max(
     1,
@@ -416,7 +365,7 @@ export default function Orders() {
       setSelectedDeliveryCompanyId("")
       await Promise.all([
         loadOrders(),
-        loadOrdersForSummary(),
+        loadTodaySummary(),
       ])
     } catch (err) {
       console.error(err)
@@ -454,6 +403,21 @@ export default function Orders() {
               <div className="text-muted small">
                 إجمالي طلبات اليوم:{" "}
                 {todayOrdersTotal}
+                <span className="mx-2">
+                  |
+                </span>
+                إجمالي إيرادات اليوم:{" "}
+                {formatCurrency(todayRevenue)}
+                <span className="mx-2">
+                  |
+                </span>
+                عملاء جدد:{" "}
+                {todayNewCustomers}
+                <span className="mx-2">
+                  |
+                </span>
+                عملاء حاليون:{" "}
+                {todayExistingCustomers}
               </div>
             </div>
           </div>
