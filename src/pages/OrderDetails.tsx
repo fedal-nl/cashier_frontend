@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   useEffect,
   useState,
 } from "react"
@@ -9,6 +10,7 @@ import {
   Card,
   Col,
   Container,
+  Form,
   Row,
   Spinner,
   Table,
@@ -30,11 +32,35 @@ function getStatusLabel(status: string) {
   )
 }
 
+const PRINT_FONT_SIZE_OPTIONS = [
+  {
+    label: "صغير",
+    value: "9px",
+  },
+  {
+    label: "عادي",
+    value: "10px",
+  },
+  {
+    label: "كبير",
+    value: "11px",
+  },
+  {
+    label: "كبير جداً",
+    value: "12px",
+  },
+]
+
 export default function OrderDetails() {
   const { orderId } = useParams()
 
   const [order, setOrder] =
     useState<OrderDetail | null>(null)
+
+  const [
+    printFontSize,
+    setPrintFontSize,
+  ] = useState("10px")
 
   const [loading, setLoading] =
     useState(Boolean(orderId))
@@ -78,10 +104,16 @@ export default function OrderDetails() {
     )
   }
 
+  const printPageStyle = {
+    "--order-print-font-size":
+      printFontSize,
+  } as CSSProperties
+
   return (
     <Container
       className="order-print-page py-4"
       dir="rtl"
+      style={printPageStyle}
     >
       <div className="d-flex justify-content-between align-items-start gap-3 mb-4 no-print">
         <div>
@@ -271,7 +303,32 @@ export default function OrderDetails() {
         </Card.Body>
       </Card>
 
-      <div className="d-flex justify-content-center no-print">
+      <div className="d-flex flex-wrap justify-content-center align-items-end gap-3 no-print">
+        <Form.Group controlId="printFontSize">
+          <Form.Label>
+            حجم خط الطباعة
+          </Form.Label>
+          <Form.Select
+            value={printFontSize}
+            onChange={(event) =>
+              setPrintFontSize(
+                event.target.value
+              )
+            }
+          >
+            {PRINT_FONT_SIZE_OPTIONS.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              )
+            )}
+          </Form.Select>
+        </Form.Group>
+
         <Button
           size="lg"
           onClick={() => window.print()}
