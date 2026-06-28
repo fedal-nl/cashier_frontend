@@ -70,6 +70,7 @@
   }
 
   .order-print-page {
+    box-sizing: border-box;
     width: 80mm;
     max-width: none;
     font-size: var(--order-print-font-size, 10px);
@@ -135,7 +136,10 @@
   }
 
   .order-total-box {
-    min-width: 90px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    width: 100%;
+    min-width: 0;
     padding-top: 0.35rem;
   }
 
