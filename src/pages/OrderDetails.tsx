@@ -60,7 +60,7 @@ export default function OrderDetails() {
   const [
     printFontSize,
     setPrintFontSize,
-  ] = useState("10px")
+  ] = useState("11px")
 
   const [loading, setLoading] =
     useState(Boolean(orderId))
