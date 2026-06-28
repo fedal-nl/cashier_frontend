@@ -53,8 +53,15 @@
 }
 
 @media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html,
   body {
     background: #fff;
+    margin: 0;
   }
 
   .navbar,
@@ -63,14 +70,77 @@
   }
 
   .order-print-page {
-    width: 100%;
+    width: 80mm;
     max-width: none;
-    padding: 0 !important;
+    font-size: var(--order-print-font-size, 10px);
+    padding: 4mm !important;
+  }
+
+  .print-card,
+  .print-card * {
+    max-width: 100%;
   }
 
   .print-card {
     border: 0 !important;
     box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  .print-card > .card-body {
+    padding: 0 !important;
+  }
+
+  .print-card h3 {
+    font-size: 1.25em;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .print-card h4,
+  .print-card .card-title {
+    font-size: 1.1em;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .print-card .mb-4 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .print-card .mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .print-card .g-3 {
+    --bs-gutter-x: 0.5rem;
+    --bs-gutter-y: 0.5rem;
+  }
+
+  .print-card .card {
+    border-width: 1px !important;
+  }
+
+  .print-card .card .card-body {
+    padding: 0.45rem !important;
+  }
+
+  .print-card .table {
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+  }
+
+  .print-card .table th,
+  .print-card .table td {
+    padding: 0.2rem 0.25rem;
+    word-break: break-word;
+  }
+
+  .order-total-box {
+    min-width: 90px;
+    padding-top: 0.35rem;
+  }
+
+  .order-total-box .fs-4 {
+    font-size: 1.2em !important;
   }
 }
 
