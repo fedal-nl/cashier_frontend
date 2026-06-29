@@ -19,9 +19,10 @@ type OrderItemPayload = {
 }
 
 type CreateOrderPayload = {
-  customer_id: number
+  customer_id?: number | null
   branch_id: number
-  delivery_company_id: number
+  delivery_company_id?: number | null
+  order_type: string
   items: OrderItemPayload[]
   note?: string
   status: string
@@ -50,6 +51,11 @@ export type DeliveryCompany = {
   contact_person?: string
 }
 
+export type OrderType = {
+  value: string
+  label_ar: string
+}
+
 export type OrderItemModification = {
   id: number
   ingredient_id: number
@@ -74,10 +80,12 @@ export type OrderItem = {
 
 export type OrderDetail = {
   id: string
-  customer: OrderCustomer
-  branch?: OrderBranch | null
+  customer: OrderCustomer | null
+  branch: OrderBranch
   delivery_company?: DeliveryCompany | null
   status: string
+  order_type: string
+  order_type_label_ar: string
   note?: string
   created_at: string
   updated_at: string
@@ -103,6 +111,18 @@ export async function createOrder(
 ) {
   const response = await api.post(
     "/orders/",
+    payload
+  )
+
+  return response.data
+}
+
+export async function updateOrder(
+  orderId: string,
+  payload: CreateOrderPayload
+) {
+  const response = await api.put(
+    `/orders/${orderId}/`,
     payload
   )
 
@@ -174,6 +194,14 @@ export async function fetchOrder(
 export async function fetchDeliveryCompanies() {
   const response = await api.get<DeliveryCompany[]>(
     "/orders/delivery-companies/"
+  )
+
+  return response.data
+}
+
+export async function fetchOrderTypes() {
+  const response = await api.get<OrderType[]>(
+    "/orders/types/"
   )
 
   return response.data

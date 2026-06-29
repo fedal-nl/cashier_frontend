@@ -11,6 +11,8 @@ type Props = {
   onAdd: (index: number) => void
   onRemove: (index: number) => void
   onCheckout: () => void
+  actionLabel?: string
+  actionDisabled?: boolean
 }
 
 export default function CartPanel({
@@ -18,6 +20,8 @@ export default function CartPanel({
   onAdd,
   onRemove,
   onCheckout,
+  actionLabel = "إتمام الطلب",
+  actionDisabled = false,
 }: Props) {
   const total = cartItems.reduce(
     (sum, item) =>
@@ -141,8 +145,12 @@ export default function CartPanel({
             variant="primary"
             className="w-100"
             onClick={onCheckout}
+            disabled={
+              actionDisabled ||
+              cartItems.length === 0
+            }
           >
-            إتمام الطلب
+            {actionLabel}
           </Button>
 
         </div>
