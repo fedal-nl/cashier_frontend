@@ -8,7 +8,10 @@ import {
   Modal,
   Form,
 } from "react-bootstrap"
-import { useNavigate } from "react-router-dom"
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom"
 
 import type { Category, MenuItem } from "../types/menu"
 import type { CartItem, CartModification } from "../types/cart"
@@ -21,7 +24,13 @@ import {
 import {
   createOrder,
   fetchDeliveryCompanies,
+  fetchOrder,
+  fetchOrderTypes,
   type DeliveryCompany,
+  type OrderDetail,
+  type OrderItem,
+  type OrderType,
+  updateOrder,
 } from "../services/orders"
 import { createCustomer } from "../services/customers"
 
@@ -33,14 +42,115 @@ import CheckoutModal, {
   type CheckoutData,
 } from "../components/CheckoutModal"
 
+function findMenuItem(
+  categories: Category[],
+  menuItemId: number
+) {
+  for (const category of categories) {
+    const item = category.items.find(
+      (menuItem) =>
+        menuItem.id === menuItemId
+    )
 
+    if (item) {
+      return item
+    }
+  }
+
+  return null
+}
+
+function orderItemToCartItem(
+  orderItem: OrderItem,
+  categories: Category[]
+): CartItem {
+  const menuItem =
+    findMenuItem(
+      categories,
+      orderItem.menu_item_id
+    ) ?? {
+      id: orderItem.menu_item_id,
+      name_ar: orderItem.menu_item_name_ar,
+      price:
+        orderItem.menu_item_base_price,
+      category_id: 0,
+      category_name_ar: "",
+      quantity: 0,
+      unit_id: 0,
+      unit_name_ar: "",
+      is_active: true,
+      ingredients:
+        orderItem.modifications.map(
+          (modification) => ({
+            ingredient_id:
+              modification.ingredient_id,
+            ingredient_name_ar:
+              modification.ingredient_name_ar,
+            price:
+              modification.ingredient_price,
+            unit_id:
+              modification.unit_id ?? 0,
+            unit_name_ar:
+              modification.unit_name_ar ?? "",
+            is_default:
+              modification.modification_type ===
+              "removed",
+            is_removable: true,
+            is_addable: true,
+          })
+        ),
+    }
+
+  return {
+    menuItem,
+    quantity: orderItem.quantity,
+    note: orderItem.order_item_note ?? "",
+    modifications:
+      orderItem.modifications.map(
+        (modification) => ({
+          ingredient:
+            menuItem.ingredients.find(
+              (ingredient) =>
+                ingredient.ingredient_id ===
+                modification.ingredient_id
+            ) ?? {
+              ingredient_id:
+                modification.ingredient_id,
+              ingredient_name_ar:
+                modification.ingredient_name_ar,
+              price:
+                modification.ingredient_price,
+              unit_id:
+                modification.unit_id ?? 0,
+              unit_name_ar:
+                modification.unit_name_ar ?? "",
+              is_default:
+                modification.modification_type ===
+                "removed",
+              is_removable: true,
+              is_addable: true,
+            },
+          type:
+            modification.modification_type,
+        })
+      ),
+    totalPrice: Number(
+      orderItem.total_price
+    ),
+  }
+}
 
 export default function Cashier() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const editOrderId =
+    searchParams.get("editOrder")
 
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] =
     useState<Category | null>(null)
+  const [loadedMenuBranchId, setLoadedMenuBranchId] =
+    useState("")
 
   const [branches, setBranches] =
     useState<Branch[]>([])
@@ -53,9 +163,26 @@ export default function Cashier() {
     setDeliveryCompanies,
   ] = useState<DeliveryCompany[]>([])
 
+  const [orderTypes, setOrderTypes] =
+    useState<OrderType[]>([])
+
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [editingOrder, setEditingOrder] =
+    useState<OrderDetail | null>(null)
+  const [
+    loadingEditOrder,
+    setLoadingEditOrder,
+  ] = useState(false)
+  const [
+    editOrderLoaded,
+    setEditOrderLoaded,
+  ] = useState(false)
+  const [
+    savingOrderUpdate,
+    setSavingOrderUpdate,
+  ] = useState(false)
 
   const [showCheckout, setShowCheckout] = useState(false)
 
@@ -69,6 +196,9 @@ export default function Cashier() {
 
   const [checkoutError, setCheckoutError] =
     useState<string | null>(null)
+
+  const isEditingOrder =
+    Boolean(editOrderId)
 
   useEffect(() => {
     fetchBranches()
@@ -89,7 +219,70 @@ export default function Cashier() {
       .catch((error) => {
         console.error(error)
       })
+
+    fetchOrderTypes()
+      .then((data) => {
+        setOrderTypes(
+          [...data].sort((a, b) => {
+            if (a.value === "dine_in") {
+              return -1
+            }
+
+            if (b.value === "dine_in") {
+              return 1
+            }
+
+            return 0
+          })
+        )
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }, [])
+
+  useEffect(() => {
+    if (!editOrderId) {
+      return
+    }
+
+    let isActive = true
+
+    const timeoutId = window.setTimeout(() => {
+      setLoadingEditOrder(true)
+      setEditOrderLoaded(false)
+
+      fetchOrder(editOrderId)
+        .then((order) => {
+          if (!isActive) {
+            return
+          }
+
+          setEditingOrder(order)
+          setSelectedBranchId(
+            String(order.branch?.id ?? "")
+          )
+        })
+        .catch((error) => {
+          console.error(error)
+          if (isActive) {
+            setCheckoutError(
+              "تعذر تحميل الطلب للتعديل"
+            )
+          }
+        })
+        .finally(() => {
+          if (isActive) {
+            setLoadingEditOrder(false)
+          }
+        })
+    }, 0)
+
+    return () => {
+      isActive = false
+      window.clearTimeout(timeoutId)
+    }
+  }, [editOrderId])
 
   useEffect(() => {
     if (!selectedBranchId) {
@@ -100,13 +293,50 @@ export default function Cashier() {
       .then((data: Category[]) => {
         setCategories(data)
         setSelectedCategory(data[0] ?? null)
+        setLoadedMenuBranchId(selectedBranchId)
       })
       .catch((error) => {
         console.error(error)
         setCategories([])
         setSelectedCategory(null)
+        setLoadedMenuBranchId("")
       })
   }, [selectedBranchId])
+
+  useEffect(() => {
+    if (
+      !editingOrder ||
+      editOrderLoaded ||
+      categories.length === 0 ||
+      loadedMenuBranchId !== selectedBranchId ||
+      String(editingOrder.branch?.id ?? "") !==
+        selectedBranchId
+    ) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCartItems(
+        editingOrder.items.map((item) =>
+          orderItemToCartItem(
+            item,
+            categories
+          )
+        )
+      )
+      setEditOrderLoaded(true)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [
+    categories,
+    editingOrder,
+    editOrderLoaded,
+    loadedMenuBranchId,
+    selectedBranchId,
+  ])
 
   function handleBranchChange(
     branchId: string
@@ -198,6 +428,65 @@ export default function Cashier() {
     )
   }
 
+  function getOrderItemsPayload() {
+    return cartItems.map((item) => ({
+      menu_item_id: item.menuItem.id,
+      quantity: item.quantity,
+      note: item.note || "",
+      modifications:
+        item.modifications?.map((mod) => ({
+          ingredient_id:
+            mod.ingredient.ingredient_id,
+          type: mod.type,
+          quantity: 1,
+          name_ar:
+            mod.ingredient
+              .ingredient_name_ar,
+        })) || [],
+    }))
+  }
+
+  async function handleSaveOrderUpdate() {
+    if (!editOrderId || !editingOrder) {
+      return
+    }
+
+    if (!selectedBranchId) {
+      setCheckoutError(
+        "اختر الفرع قبل حفظ التعديلات"
+      )
+      return
+    }
+
+    try {
+      setSavingOrderUpdate(true)
+      setCheckoutError(null)
+
+      await updateOrder(editOrderId, {
+        customer_id:
+          editingOrder.customer?.id ?? null,
+        branch_id: Number(selectedBranchId),
+        delivery_company_id:
+          editingOrder.delivery_company?.id ??
+          null,
+        order_type:
+          editingOrder.order_type,
+        note: editingOrder.note ?? "",
+        status: editingOrder.status,
+        items: getOrderItemsPayload(),
+      })
+
+      navigate(`/orders/${editOrderId}`)
+    } catch (error) {
+      console.error(error)
+      setCheckoutError(
+        "تعذر حفظ تعديلات الطلب، حاول مرة أخرى"
+      )
+    } finally {
+      setSavingOrderUpdate(false)
+    }
+  }
+
   async function handleCheckout(
     checkoutData: CheckoutData
   ) {
@@ -213,49 +502,36 @@ export default function Cashier() {
 
       const customerData =
         checkoutData.customer
-      let customerId
+      let customerId: number | null = null
 
-      if ("customer_id" in customerData) {
-        customerId =
-          customerData.customer_id
-      } else {
-        const customer =
-          await createCustomer(
-            customerData
-          )
+      if (customerData) {
+        if ("customer_id" in customerData) {
+          customerId =
+            customerData.customer_id
+        } else {
+          const customer =
+            await createCustomer(
+              customerData
+            )
 
-        customerId =
-          customer.customer_id
+          customerId =
+            customer.customer_id
+        }
       }
 
-    const order =
-      await createOrder({
-      customer_id: customerId,
-      branch_id: Number(selectedBranchId),
-      delivery_company_id:
-        checkoutData.delivery_company_id,
-      note: checkoutData.orderNote ?? "",
-      status: "created",
-      items: cartItems.map((item) => ({
-        menu_item_id: item.menuItem.id,
-        quantity: item.quantity,
-        note: item.note || "",
-        modifications:
-          item.modifications?.map(
-            (mod) => ({
-              ingredient_id:
-                mod.ingredient.ingredient_id,
-
-              type: mod.type,
-
-              quantity: 1,
-
-              name_ar:
-                mod.ingredient.ingredient_name_ar,
-            })
-          ) || [],
-      })),
-    })
+      const order =
+        await createOrder({
+          customer_id: customerId,
+          branch_id: Number(selectedBranchId),
+          delivery_company_id:
+            checkoutData.delivery_company_id ??
+            null,
+          order_type:
+            checkoutData.order_type,
+          note: checkoutData.orderNote ?? "",
+          status: "created",
+          items: getOrderItemsPayload(),
+        })
       setCartItems([])
       setShowCheckout(false)
       setCreatedOrderId(order.order_id)
@@ -274,6 +550,15 @@ export default function Cashier() {
     }
   }
 
+  function handleCartAction() {
+    if (isEditingOrder) {
+      void handleSaveOrderUpdate()
+      return
+    }
+
+    setShowCheckout(true)
+  }
+
 return (
     <Container
       fluid
@@ -288,6 +573,34 @@ return (
           dismissible
         >
           {checkoutError}
+        </Alert>
+      )}
+
+      {isEditingOrder && (
+        <Alert
+          variant="info"
+          className="d-flex flex-column flex-md-row justify-content-between gap-2"
+          dir="rtl"
+        >
+          <div>
+            {loadingEditOrder
+              ? "جاري تحميل الطلب للتعديل..."
+              : "أنت تقوم بتعديل طلب موجود. أضف أو احذف الأصناف ثم احفظ التعديلات."}
+          </div>
+
+          {editOrderId && (
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() =>
+                navigate(
+                  `/orders/${editOrderId}`
+                )
+              }
+            >
+              الرجوع للطلب
+            </Button>
+          )}
         </Alert>
       )}
 
@@ -357,7 +670,18 @@ return (
             cartItems={cartItems}
             onAdd={increase}
             onRemove={decrease}
-            onCheckout={() => setShowCheckout(true)}
+            onCheckout={handleCartAction}
+            actionLabel={
+              isEditingOrder
+                ? savingOrderUpdate
+                  ? "جاري الحفظ..."
+                  : "حفظ التعديلات"
+                : "إتمام الطلب"
+            }
+            actionDisabled={
+              loadingEditOrder ||
+              savingOrderUpdate
+            }
           />
         </Col>
 
@@ -374,6 +698,7 @@ return (
       <CheckoutModal
         show={showCheckout}
         deliveryCompanies={deliveryCompanies}
+        orderTypes={orderTypes}
         onClose={() =>
           setShowCheckout(false)
         }

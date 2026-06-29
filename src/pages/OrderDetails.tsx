@@ -168,20 +168,22 @@ export default function OrderDetails() {
                     بيانات العميل
                   </Card.Title>
                   <div>
-                    الاسم: {order.customer.name}
+                    الاسم:{" "}
+                    {order.customer?.name ?? "-"}
                   </div>
                   <div>
                     الهاتف:{" "}
-                    {order.customer.phone_number ||
+                    {order.customer
+                      ?.phone_number ||
                       "-"}
                   </div>
                   <div>
                     البريد:{" "}
-                    {order.customer.email || "-"}
+                    {order.customer?.email || "-"}
                   </div>
                   <div>
                     العنوان:{" "}
-                    {order.customer.address || "-"}
+                    {order.customer?.address || "-"}
                   </div>
                 </Card.Body>
               </Card>
@@ -193,6 +195,11 @@ export default function OrderDetails() {
                   <Card.Title>
                     بيانات الطلب
                   </Card.Title>
+                  <div>
+                    نوع الطلب:{" "}
+                    {order.order_type_label_ar ??
+                      order.order_type}
+                  </div>
                   <div>
                     الفرع:{" "}
                     {order.branch?.name ?? "-"}
@@ -328,6 +335,13 @@ export default function OrderDetails() {
             )}
           </Form.Select>
         </Form.Group>
+
+        <Link
+          to={`/cashier?editOrder=${order.id}`}
+          className="btn btn-outline-primary btn-lg"
+        >
+          تعديل الطلب
+        </Link>
 
         <Button
           size="lg"

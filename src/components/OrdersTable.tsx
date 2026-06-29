@@ -11,7 +11,7 @@ export type Order = {
   id: string
   customer: {
     name: string
-  }
+  } | null
   branch?: {
     id: number
     name: string
@@ -52,7 +52,7 @@ export default function OrdersTable({
           <th>وقت التحديث</th>
           <th>المبلغ</th>
           <th>الحالة</th>
-          <th>التفاصيل</th>
+          <th>الإجراءات</th>
         </tr>
       </thead>
 
@@ -78,10 +78,7 @@ export default function OrdersTable({
             </td>
 
             <td>
-              {
-                order.customer
-                  .name
-              }
+              {order.customer?.name ?? "-"}
             </td>
 
             <td>
@@ -148,12 +145,21 @@ export default function OrdersTable({
             </td>
 
             <td>
-              <Link
-                to={`/orders/${order.id}`}
-                className="btn btn-sm btn-outline-primary"
-              >
-                طباعة
-              </Link>
+              <div className="d-flex gap-2">
+                <Link
+                  to={`/orders/${order.id}`}
+                  className="btn btn-sm btn-outline-primary"
+                >
+                  طباعة
+                </Link>
+
+                <Link
+                  to={`/cashier?editOrder=${order.id}`}
+                  className="btn btn-sm btn-outline-secondary"
+                >
+                  تعديل
+                </Link>
+              </div>
             </td>
           </tr>
         ))}
