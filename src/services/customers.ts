@@ -32,8 +32,15 @@ export async function findCustomer(
 export async function listCustomers({
   page,
   pageSize,
-}: PaginationParams = {}) {
+  search,
+}: PaginationParams & {
+  search?: string
+} = {}) {
   const params = new URLSearchParams()
+
+  if (search) {
+    params.append("search", search)
+  }
 
   if (page) {
     params.append("page", String(page))
