@@ -47,6 +47,11 @@ export default function Customers() {
   const [search, setSearch] =
     useState("")
 
+  const [
+    appliedSearch,
+    setAppliedSearch,
+  ] = useState("")
+
   const [loading, setLoading] =
     useState(true)
 
@@ -76,28 +81,6 @@ export default function Customers() {
   const [form, setForm] =
     useState<CustomerPayload>(emptyForm)
 
-  const filteredCustomers = useMemo(() => {
-    const term =
-      search.trim().toLowerCase()
-
-    if (!term) {
-      return customers
-    }
-
-    return customers.filter((customer) =>
-      [
-        customer.name,
-        customer.email,
-        customer.phone_number,
-        customer.address,
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          value!.toLowerCase().includes(term)
-        )
-    )
-  }, [customers, search])
-
   const loadCustomers = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -107,6 +90,7 @@ export default function Customers() {
         await listCustomers({
           page: currentPage,
           pageSize,
+          search: appliedSearch,
         })
       setCustomers(data.results)
       setTotalCustomers(data.count)
@@ -116,14 +100,33 @@ export default function Customers() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, pageSize])
+  }, [
+    appliedSearch,
+    currentPage,
+    pageSize,
+  ])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setAppliedSearch(search.trim())
+      setCurrentPage(1)
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [search])
 
   useEffect(() => {
     let isActive = true
 
+    setLoading(true)
+    setError(null)
+
     listCustomers({
       page: currentPage,
       pageSize,
+      search: appliedSearch,
     })
       .then((data) => {
         if (isActive) {
@@ -148,7 +151,11 @@ export default function Customers() {
     return () => {
       isActive = false
     }
-  }, [currentPage, pageSize])
+  }, [
+    appliedSearch,
+    currentPage,
+    pageSize,
+  ])
 
   function openCreateModal() {
     setEditingCustomer(null)
@@ -290,7 +297,7 @@ export default function Customers() {
         <Col lg={7}>
           <InputGroup>
             <Form.Control
-              placeholder="بحث بالاسم أو رقم الهاتف أو البريد أو العنوان"
+              placeholder="بحث بالاسم أو رقم الهاتف"
               value={search}
               onChange={(event) =>
                 setSearch(event.target.value)
@@ -350,7 +357,7 @@ export default function Customers() {
           <div className="customers-empty">
             <Spinner animation="border" />
           </div>
-        ) : filteredCustomers.length === 0 ? (
+        ) : customers.length === 0 ? (
           <div className="customers-empty">
             لا توجد نتائج
           </div>
@@ -372,7 +379,7 @@ export default function Customers() {
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.map(
+              {customers.map(
                 (customer) => (
                   <tr key={customer.id}>
                     <td className="customer-name">
