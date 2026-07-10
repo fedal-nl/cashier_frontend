@@ -16,6 +16,7 @@ import {
   Pagination,
   Row,
   Spinner,
+  Table,
 } from "react-bootstrap"
 
 import OrdersTable from "../components/OrdersTable"
@@ -69,11 +70,9 @@ export default function Orders() {
     useState(0)
 
   const [
-    todaySummary,
-    setTodaySummary,
-  ] = useState<TodayOrderSummary | null>(
-    null
-  )
+    todaySummaries,
+    setTodaySummaries,
+  ] = useState<TodayOrderSummary[]>([])
 
   const [
     deliveryCompanies,
@@ -137,7 +136,7 @@ export default function Orders() {
       const data =
         await fetchTodayOrderSummary()
 
-      setTodaySummary(data)
+      setTodaySummaries(data)
     }, [])
 
   useEffect(() => {
@@ -201,46 +200,40 @@ export default function Orders() {
     })
   }, [loadTodaySummary])
 
-  const todayStatusTotals =
-    useMemo(() => {
-      const totals = Object.keys(
-        ORDER_STATUS_LABELS
-      ).reduce<Record<string, number>>(
-        (acc, status) => {
-          acc[status] = 0
-          return acc
-        },
-        {}
-      )
-
-      if (!todaySummary) {
-        return totals
-      }
-
-      Object.entries(
-        todaySummary.orders_by_status
-      ).forEach(([status, count]) => {
-        totals[status] = count
-      })
-
-      return totals
-    }, [todaySummary])
-
   const todayOrdersTotal =
-    todaySummary?.total_orders ?? 0
+    todaySummaries.reduce(
+      (total, summary) =>
+        total + summary.total_orders,
+      0
+    )
 
-  const todayRevenue = Number(
-    todaySummary?.total_revenue ?? 0
+  const todayRevenue = todaySummaries.reduce(
+    (total, summary) =>
+      total +
+      Number(summary.total_revenue),
+    0
   )
 
   const todayNewCustomers =
-    todaySummary?.total_new_customers_ordered ??
-    0
+    todaySummaries.reduce(
+      (total, summary) =>
+        total +
+        summary.total_new_customers_ordered,
+      0
+    )
 
   const todayExistingCustomers =
-    todaySummary
-      ?.total_existing_customers_ordered ??
-    0
+    todaySummaries.reduce(
+      (total, summary) =>
+        total +
+        summary.total_existing_customers_ordered,
+      0
+    )
+
+  const branchTodaySummaries =
+    todaySummaries.filter(
+      (summary) => summary.branch_id > 0
+    )
 
   const totalPages = Math.max(
     1,
@@ -401,7 +394,7 @@ export default function Orders() {
                 طلبات اليوم حسب الحالة
               </h5>
               <div className="text-muted small">
-                إجمالي طلبات اليوم:{" "}
+                إجمالي كل الفروع:{" "}
                 {todayOrdersTotal}
                 <span className="mx-2">
                   |
@@ -422,31 +415,96 @@ export default function Orders() {
             </div>
           </div>
 
-          <Row className="g-3">
-            {Object.entries(
-              ORDER_STATUS_LABELS
-            ).map(
-              ([status, label]) => (
-                <Col
-                  key={status}
-                  xs={6}
-                  md={4}
-                  xl={3}
-                >
-                  <div className="border rounded p-3 h-100">
-                    <div className="text-muted small mb-2">
-                      {label}
-                    </div>
-                    <div className="fs-4 fw-bold">
-                      {todayStatusTotals[
-                        status
-                      ] ?? 0}
-                    </div>
-                  </div>
-                </Col>
-              )
-            )}
-          </Row>
+          {branchTodaySummaries.length ===
+          0 ? (
+            <div className="text-muted">
+              تفاصيل الفروع غير متاحة حالياً
+            </div>
+          ) : (
+            <Table
+              responsive
+              hover
+              size="sm"
+              className="mb-0 align-middle"
+            >
+              <thead>
+                <tr>
+                  <th>الفرع</th>
+                  <th>الطلبات</th>
+                  <th>الإيرادات</th>
+                  <th>العملاء</th>
+                  <th>الحالات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {branchTodaySummaries.map(
+                  (summary) => (
+                    <tr
+                      key={
+                        summary.branch_id
+                      }
+                    >
+                      <td className="fw-semibold">
+                        {
+                          summary.branch_name
+                        }
+                      </td>
+                      <td>
+                        {
+                          summary.total_orders
+                        }
+                      </td>
+                      <td>
+                        {formatCurrency(
+                          Number(
+                            summary.total_revenue
+                          )
+                        )}
+                      </td>
+                      <td className="text-muted small">
+                        جدد:{" "}
+                        {
+                          summary
+                            .total_new_customers_ordered
+                        }
+                        <span className="mx-1">
+                          |
+                        </span>
+                        حاليون:{" "}
+                        {
+                          summary
+                            .total_existing_customers_ordered
+                        }
+                      </td>
+                      <td>
+                        <div className="d-flex flex-wrap gap-1">
+                          {Object.entries(
+                            ORDER_STATUS_LABELS
+                          ).map(
+                            ([
+                              status,
+                              label,
+                            ]) => (
+                              <span
+                                key={`${summary.branch_id}-${status}`}
+                                className="badge bg-light text-dark border fw-normal"
+                              >
+                                {label}:{" "}
+                                {summary
+                                  .orders_by_status[
+                                  status
+                                ] ?? 0}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </Table>
+          )}
         </Card.Body>
       </Card>
 

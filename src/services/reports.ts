@@ -2,6 +2,8 @@ import api from "./api"
 
 export type DailyReportRow = {
   date: string
+  branch_id: number
+  branch_name: string
   total_orders: number
   orders_by_status: Record<string, number>
   total_existing_customers_ordered: number
