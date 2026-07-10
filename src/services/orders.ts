@@ -94,12 +94,18 @@ export type OrderDetail = {
 }
 
 export type TodayOrderSummary = {
+  branch_id: number
+  branch_name: string
   total_orders: number
   total_revenue: string
   total_existing_customers_ordered: number
   total_new_customers_ordered: number
   orders_by_status: Record<string, number>
 }
+
+type TodayOrderSummaryResponse =
+  | TodayOrderSummary
+  | TodayOrderSummary[]
 
 type UpdateOrderStatusPayload = {
   status: string
@@ -174,11 +180,24 @@ export async function fetchOrders(
  * Fetches today's order, revenue, status, and customer summary totals.
  */
 export async function fetchTodayOrderSummary() {
-  const response = await api.get<TodayOrderSummary>(
+  const response = await api.get<TodayOrderSummaryResponse>(
     "/orders/summary/today/"
   )
 
-  return response.data
+  if (Array.isArray(response.data)) {
+    return response.data
+  }
+
+  return [
+    {
+      ...response.data,
+      branch_id:
+        response.data.branch_id ?? 0,
+      branch_name:
+        response.data.branch_name ??
+        "كل الفروع",
+    },
+  ]
 }
 
 export async function fetchOrder(

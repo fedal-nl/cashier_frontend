@@ -1,4 +1,6 @@
 import {
+  useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react"
@@ -124,7 +126,7 @@ export default function Reports() {
     }
   }
 
-  async function loadBranches() {
+  const loadBranches = useCallback(async () => {
     if (branches.length > 0) {
       return
     }
@@ -136,7 +138,11 @@ export default function Reports() {
       console.error(err)
       setError("تعذر تحميل الفروع")
     }
-  }
+  }, [branches.length])
+
+  useEffect(() => {
+    loadBranches()
+  }, [loadBranches])
 
   return (
     <Container
@@ -204,7 +210,6 @@ export default function Reports() {
             </Form.Label>
             <Form.Select
               value={selectedBranchId}
-              onFocus={loadBranches}
               onChange={(event) =>
                 setSelectedBranchId(
                   event.target.value
@@ -345,6 +350,7 @@ export default function Reports() {
           <thead>
             <tr>
               <th>التاريخ</th>
+              <th>الفرع</th>
               <th>إجمالي الطلبات</th>
               <th>الحالات</th>
               <th>عملاء جدد</th>
@@ -355,8 +361,11 @@ export default function Reports() {
 
           <tbody>
             {rows.map((row) => (
-              <tr key={row.date}>
+              <tr
+                key={`${row.date}-${row.branch_id}`}
+              >
                 <td>{row.date}</td>
+                <td>{row.branch_name}</td>
                 <td>{row.total_orders}</td>
                 <td>
                   <div className="d-flex flex-wrap gap-2">
