@@ -6,6 +6,7 @@ export type Unit = {
 export type Category = {
     id: number;
     name_ar: string;
+    frontend_ranking: number;
     items: MenuItem[];
 }
 
