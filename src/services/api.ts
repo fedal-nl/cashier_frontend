@@ -82,5 +82,10 @@ export async function fetchMenu(
     )
   }
 
-  return response.data as Category[]
+  return (response.data as Category[]).sort(
+    (first, second) =>
+      first.frontend_ranking - second.frontend_ranking ||
+      first.name_ar.localeCompare(second.name_ar, "ar") ||
+      first.id - second.id
+  )
 }
