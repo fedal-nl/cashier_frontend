@@ -9,16 +9,26 @@ import Orders from "../pages/Orders"
 import OrderDetails from "../pages/OrderDetails"
 import Customers from "../pages/Customers"
 import Reports from "../pages/Reports"
+import OrderLogs from "../pages/OrderLogs"
 import Home from "../pages/Home"
 import AppNavbar from "../components/layout/AppNavBar"
 import { useAuth } from "../context/useAuth"
 
 function ProtectedRoute({
   children,
+  requireReports = false,
+  requireOrderLogs = false,
 }: {
   children: React.ReactNode
+  requireReports?: boolean
+  requireOrderLogs?: boolean
 }) {
-  const { isAuthenticated, isLoading } =
+  const {
+    isAuthenticated,
+    isLoading,
+    canViewReports,
+    canViewOrderLogs,
+  } =
     useAuth()
 
   if (isLoading) {
@@ -27,6 +37,14 @@ function ProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (requireReports && !canViewReports) {
+    return <Navigate to="/" replace />
+  }
+
+  if (requireOrderLogs && !canViewOrderLogs) {
+    return <Navigate to="/" replace />
   }
 
   return children
@@ -99,8 +117,16 @@ export default function AppRouter() {
         <Route
           path="/reports"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireReports>
               <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/order-logs"
+          element={
+            <ProtectedRoute requireOrderLogs>
+              <OrderLogs />
             </ProtectedRoute>
           }
         />

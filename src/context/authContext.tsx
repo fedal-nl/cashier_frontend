@@ -29,6 +29,12 @@ export function AuthProvider({
     setUsername,
   ] = useState<string | null>(null)
 
+  const [canViewReports, setCanViewReports] =
+    useState(false)
+
+  const [canViewOrderLogs, setCanViewOrderLogs] =
+    useState(false)
+
   useEffect(() => {
     refreshCsrfToken()
       .then(() => getCurrentUser())
@@ -36,6 +42,8 @@ export function AuthProvider({
           if (data.authenticated) {
             setIsAuthenticated(true)
             setUsername(data.username)
+            setCanViewReports(Boolean(data.can_view_reports))
+            setCanViewOrderLogs(Boolean(data.can_view_order_logs))
           }
         })
         .catch(() => {})
@@ -53,8 +61,12 @@ export function AuthProvider({
       password
     )
 
+    const currentUser = await getCurrentUser()
+
     setIsAuthenticated(true)
-    setUsername(username)
+    setUsername(currentUser.username ?? username)
+    setCanViewReports(Boolean(currentUser.can_view_reports))
+    setCanViewOrderLogs(Boolean(currentUser.can_view_order_logs))
   }
 
   async function logout() {
@@ -62,6 +74,8 @@ export function AuthProvider({
 
     setIsAuthenticated(false)
     setUsername(null)
+    setCanViewReports(false)
+    setCanViewOrderLogs(false)
   }
 
   return (
@@ -70,6 +84,8 @@ export function AuthProvider({
         isAuthenticated,
         isLoading,
         username,
+        canViewReports,
+        canViewOrderLogs,
         login,
         logout,
       }}

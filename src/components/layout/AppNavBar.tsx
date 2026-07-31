@@ -1,8 +1,11 @@
 import { Navbar, Nav, Container } from "react-bootstrap"
 import { Link } from "react-router-dom"
 import LogoutButton from "../LogoutButton"
+import { useAuth } from "../../context/useAuth"
 
 export default function AppNavbar() {
+  const { canViewReports, canViewOrderLogs } = useAuth()
+
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container fluid>
@@ -31,9 +34,17 @@ export default function AppNavbar() {
               العملاء
             </Nav.Link>
 
-            <Nav.Link as={Link} to="/reports">
-              التقارير
-            </Nav.Link>
+            {canViewReports && (
+              <Nav.Link as={Link} to="/reports">
+                التقارير
+              </Nav.Link>
+            )}
+
+            {canViewOrderLogs && (
+              <Nav.Link as={Link} to="/order-logs">
+                سجل الطلبات
+              </Nav.Link>
+            )}
 
             <LogoutButton />
 

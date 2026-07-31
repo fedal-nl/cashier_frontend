@@ -110,6 +110,7 @@ type TodayOrderSummaryResponse =
 type UpdateOrderStatusPayload = {
   status: string
   delivery_company_id?: number
+  cancellation_password?: string
 }
 
 export async function createOrder(
