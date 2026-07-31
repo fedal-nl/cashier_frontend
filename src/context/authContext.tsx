@@ -35,6 +35,9 @@ export function AuthProvider({
   const [canViewOrderLogs, setCanViewOrderLogs] =
     useState(false)
 
+  const [canCancelWithoutPassword, setCanCancelWithoutPassword] =
+    useState(false)
+
   useEffect(() => {
     refreshCsrfToken()
       .then(() => getCurrentUser())
@@ -44,6 +47,7 @@ export function AuthProvider({
             setUsername(data.username)
             setCanViewReports(Boolean(data.can_view_reports))
             setCanViewOrderLogs(Boolean(data.can_view_order_logs))
+            setCanCancelWithoutPassword(Boolean(data.can_cancel_without_password))
           }
         })
         .catch(() => {})
@@ -67,6 +71,9 @@ export function AuthProvider({
     setUsername(currentUser.username ?? username)
     setCanViewReports(Boolean(currentUser.can_view_reports))
     setCanViewOrderLogs(Boolean(currentUser.can_view_order_logs))
+    setCanCancelWithoutPassword(
+      Boolean(currentUser.can_cancel_without_password)
+    )
   }
 
   async function logout() {
@@ -76,6 +83,7 @@ export function AuthProvider({
     setUsername(null)
     setCanViewReports(false)
     setCanViewOrderLogs(false)
+    setCanCancelWithoutPassword(false)
   }
 
   return (
@@ -86,6 +94,7 @@ export function AuthProvider({
         username,
         canViewReports,
         canViewOrderLogs,
+        canCancelWithoutPassword,
         login,
         logout,
       }}
