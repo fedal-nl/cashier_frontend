@@ -23,6 +23,7 @@ import OrdersTable from "../components/OrdersTable"
 import type { Order } from "../components/OrdersTable"
 import { ORDER_STATUS_LABELS } from "../constants/orderstatus"
 import { formatCurrency } from "../utils/formatters"
+import { useAuth } from "../context/useAuth"
 
 import {
   fetchDeliveryCompanies,
@@ -46,6 +47,7 @@ const PAGE_SIZE_OPTIONS = [
 ]
 
 export default function Orders() {
+  const { canCancelWithoutPassword } = useAuth()
   const [orders, setOrders] =
     useState<Order[]>([])
 
@@ -349,7 +351,8 @@ export default function Orders() {
             selectedDeliveryCompanyId
           ),
         }),
-        ...(pendingStatusChange.nextStatus === "cancelled" && {
+        ...(pendingStatusChange.nextStatus === "cancelled" &&
+          !canCancelWithoutPassword && {
           cancellation_password: cancellationPassword,
         }),
       }
@@ -778,7 +781,8 @@ export default function Orders() {
                 )}
               </Form.Group>
 
-              {pendingStatusChange.nextStatus === "cancelled" && (
+              {pendingStatusChange.nextStatus === "cancelled" &&
+                !canCancelWithoutPassword && (
                 <Form.Group className="mt-4">
                   <Form.Label>
                     كلمة مرور إلغاء الطلب
@@ -816,6 +820,7 @@ export default function Orders() {
             disabled={
               updatingStatus ||
               (pendingStatusChange?.nextStatus === "cancelled" &&
+                !canCancelWithoutPassword &&
                 !cancellationPassword)
             }
           >

@@ -6,6 +6,7 @@ export type AuthContextType = {
   username: string | null
   canViewReports: boolean
   canViewOrderLogs: boolean
+  canCancelWithoutPassword: boolean
   login: (
     username: string,
     password: string
