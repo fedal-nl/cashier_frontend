@@ -84,6 +84,9 @@ export default function Orders() {
     setSelectedDeliveryCompanyId,
   ] = useState("")
 
+  const [cancellationPassword, setCancellationPassword] =
+    useState("")
+
   const [
     pendingStatusChange,
     setPendingStatusChange,
@@ -315,6 +318,7 @@ export default function Orders() {
       nextStatus: status,
     })
     setSelectedDeliveryCompanyId("")
+    setCancellationPassword("")
   }
 
   function closeStatusDialog() {
@@ -324,6 +328,7 @@ export default function Orders() {
 
     setPendingStatusChange(null)
     setSelectedDeliveryCompanyId("")
+    setCancellationPassword("")
   }
 
   async function confirmStatusChange() {
@@ -344,6 +349,9 @@ export default function Orders() {
             selectedDeliveryCompanyId
           ),
         }),
+        ...(pendingStatusChange.nextStatus === "cancelled" && {
+          cancellation_password: cancellationPassword,
+        }),
       }
 
       await updateOrderStatus(
@@ -356,6 +364,7 @@ export default function Orders() {
       )
       setPendingStatusChange(null)
       setSelectedDeliveryCompanyId("")
+      setCancellationPassword("")
       await Promise.all([
         loadOrders(),
         loadTodaySummary(),
@@ -768,6 +777,24 @@ export default function Orders() {
                   </div>
                 )}
               </Form.Group>
+
+              {pendingStatusChange.nextStatus === "cancelled" && (
+                <Form.Group className="mt-4">
+                  <Form.Label>
+                    كلمة مرور إلغاء الطلب
+                  </Form.Label>
+                  <Form.Control
+                    type="password"
+                    value={cancellationPassword}
+                    onChange={(event) =>
+                      setCancellationPassword(event.target.value)
+                    }
+                    autoComplete="off"
+                    disabled={updatingStatus}
+                    autoFocus
+                  />
+                </Form.Group>
+              )}
             </>
           )}
         </Modal.Body>
@@ -787,7 +814,9 @@ export default function Orders() {
             variant="primary"
             onClick={confirmStatusChange}
             disabled={
-              updatingStatus
+              updatingStatus ||
+              (pendingStatusChange?.nextStatus === "cancelled" &&
+                !cancellationPassword)
             }
           >
             {updatingStatus ? (

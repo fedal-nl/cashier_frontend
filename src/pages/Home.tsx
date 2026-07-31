@@ -1,7 +1,10 @@
 import { Container, Row, Col, Card } from "react-bootstrap"
 import { Link } from "react-router-dom"
+import { useAuth } from "../context/useAuth"
 
 export default function Home() {
+  const { canViewReports, canViewOrderLogs } = useAuth()
+
   return (
     <Container className="py-5">
       <h1 className="text-center mb-5">
@@ -35,18 +38,33 @@ export default function Home() {
           </Card>
         </Col>
 
-        <Col md={4}>
-          <Card
-            as={Link}
-            to="/reports"
-            className="p-5 text-center text-decoration-none shadow"
-          >
-            <h3>التقارير</h3>
-            <p>
-              متابعة المبيعات والعملاء
-            </p>
-          </Card>
-        </Col>
+        {canViewReports && (
+          <Col md={4}>
+            <Card
+              as={Link}
+              to="/reports"
+              className="p-5 text-center text-decoration-none shadow"
+            >
+              <h3>التقارير</h3>
+              <p>
+                متابعة المبيعات والعملاء
+              </p>
+            </Card>
+          </Col>
+        )}
+
+        {canViewOrderLogs && (
+          <Col md={4}>
+            <Card
+              as={Link}
+              to="/order-logs"
+              className="p-5 text-center text-decoration-none shadow"
+            >
+              <h3>سجل الطلبات</h3>
+              <p>مراجعة تعديلات الطلبات والأسعار</p>
+            </Card>
+          </Col>
+        )}
       </Row>
     </Container>
   )

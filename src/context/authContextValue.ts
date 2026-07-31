@@ -4,6 +4,8 @@ export type AuthContextType = {
   isAuthenticated: boolean
   isLoading: boolean
   username: string | null
+  canViewReports: boolean
+  canViewOrderLogs: boolean
   login: (
     username: string,
     password: string
